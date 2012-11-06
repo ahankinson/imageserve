@@ -107,7 +107,7 @@ ROOT_URLCONF = 'imageserve.urls'
 WSGI_APPLICATION = 'imageserve.wsgi.application'
 
 TEMPLATE_DIRS = (
-    '/Users/jamieklassen/Documents/Code/imageserve/imageserve/imageserveapp',
+    '/Users/jamieklassen/Documents/Code/imageserve/imageserveapp',
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
