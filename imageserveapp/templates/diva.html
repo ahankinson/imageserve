@@ -1,0 +1,28 @@
+{% extends 'main.html' %}
+
+{% block header %}
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/diva.min.css" type="text/css" />
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" type="text/css" />
+
+    <script src="{{ STATIC_URL }}js/diva.min.js"></script>
+
+    <script type="text/javascript">
+    $(document).ready(function() {
+        $('#diva-wrapper').diva({
+            enableAutoHeight: true,
+            fixedHeightGrid: false,
+            iipServerURL: "localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
+            divaserveURL: "/divaserve",
+            imageDir: "{{ms_name}}",
+            // canvasPlugin: {
+            //     proxyURL: 'canvas'
+            // }
+        });
+        var dv = $('#diva-wrapper').data('diva');
+    });
+    </script>
+{% endblock %}
+
+{% block wrap %}
+    <div id="diva-wrapper"></div>
+{% endblock %}

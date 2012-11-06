@@ -1,0 +1,19 @@
+{% extends 'main.html' %}
+
+{% block wrap %}
+<div class="container">
+    <h1>Available Manuscripts</h1>
+    <table class="table table-striped">
+        <tr>
+            <th>Manuscript Name</th>
+            <th>Number of Images</th>
+        </tr>
+    {% for manuscript, count in info %}
+        <tr>
+            <td><a href="/witness/{{manuscript}}">{{manuscript}}</a></td>
+            <td>{{ count }}</td>
+        </tr>
+    {% endfor %}
+    </table>
+</div>
+{% endblock %}
