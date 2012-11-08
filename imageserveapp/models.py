@@ -20,6 +20,9 @@ class Manuscript(models.Model):
 	directory = FolderField(path=IMG_DIR)
 	ismi_id = models.IntegerField(blank=True, null=True)
 	num_files = models.IntegerField(blank=True, null=True)
+	
+	def __unicode__(self):
+		return self.directory
 
 class ManuscriptGroup(models.Model):
 	pass
