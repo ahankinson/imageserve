@@ -8,10 +8,10 @@
             <th>Manuscript Name</th>
             <th>Number of Images</th>
         </tr>
-    {% for manuscript, count in info %}
+    {% for m in manuscripts %}
         <tr>
-            <td><a href="/witness/{{manuscript}}">{{manuscript}}</a></td>
-            <td>{{ count }}</td>
+            <td><a href="/witness/{{m.id}}">{{m.directory}}</a></td>
+            <td>{{ m.num_files }}</td>
         </tr>
     {% endfor %}
     </table>

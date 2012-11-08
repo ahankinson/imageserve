@@ -19,7 +19,11 @@ class FolderField(models.FilePathField):
 class Manuscript(models.Model):
 	directory = FolderField(path=IMG_DIR)
 	ismi_id = models.IntegerField(blank=True, null=True)
-	num_files = models.IntegerField(blank=True, null=True)
+	num_files = models.IntegerField(editable=False)
+	
+	def save(self, *args, **kwargs):
+		self.num_files = len(listdir(join(IMG_DIR, self.directory)))
+		super(Manuscript, self).save(*args, **kwargs)
 	
 	def __unicode__(self):
 		return self.directory
