@@ -14,6 +14,7 @@
     $(document).ready(function() {
         $('#diva-wrapper').diva({
             enableAutoHeight: true,
+            enableAutoTitle: true,
             fixedHeightGrid: false,
             iipServerURL: "localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
             divaserveURL: "/divaserve",
@@ -23,18 +24,15 @@
             // }
         });
         var dv = $('#diva-wrapper').data('diva');
+        $('#diva-wrapper').ajaxComplete(function(event, xhr, options) {
+            $('#1-diva-tools-right').prepend('<div id="metadata-button" style="float:left"><a href="#myModal" role="button" class="btn" data-toggle="modal">Metadata</a></div>');
+            $('#1-diva-title').html('{{title|safe}}');
+        });
     });
     </script>
 {% endblock %}
 
 {% block wrap %}
-    <!-- Button to trigger modal -->
-    <div class="row">
-	  <div class="span2 offset10">
-        <a href="#myModal" role="button" class="btn" data-toggle="modal"
-           style="text-align:right">Metadata</a>
-      </div>
-    </div>
     <!-- Modal -->
     <div id="myModal" class="modal hide fade" tabindex="-1" role="dialog"
          aria-labelledby="myModalLabel" aria-hidden="true">
