@@ -27,28 +27,48 @@ def canvas(request):
 
 def manuscript(request, ms_id):
     """The view for displaying a specific manuscript."""
+    def get_by_id(iden):
+        u = urlopen(JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(iden))
+        ent = json.loads(u.read())['ent']
+        u.close()
+        return ent
     m = Manuscript.objects.get(id=ms_id)
-    u = urlopen(JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(m.ismi_id))
-    md = json.loads(u.read())['ent']
-    u.close()
+    md = get_by_id(m.ismi_id)
     pth = os.path.join(conf.IMG_DIR, m.directory)
     def htmlify(s):
         post = ''
         if isinstance(s,dict):
-            post += "<table class=\"table table-bordered\">"
+            post += u"<table class=\"table table-bordered\">"
             for key, value in s.items():
-                post += "<tr><td>"+htmlify(key)+"</td><td>"+htmlify(value)+"</td></tr>"
-            post += "</table>"
+                post += u"<tr><td>{0}</td><td>{1}</td></tr>".format(htmlify(key), htmlify(value))
+            post += u"</table>"
         elif isinstance(s,list):
             for item in s:
                 post += htmlify(item)
         else:
             post += unicode(s)
         return post
-        
+    ms_title = md['ov']
+    author_id = [rel for rel in md['src_rels'] if rel['name'] == 'was_created_by'][0]['tar_id']
+    ms_author = get_by_id(author_id)['ov']
+    title = u'{0}<br /><br />Author: {1}'.format(ms_title, ms_author)
+    better_md = {
+        'Title': ms_title,
+        'Author': ms_author,
+        'Attributes': {
+            att['name']: att.get('ov') for att in md['atts']
+        },
+        'Source Relations': {
+            rel['name']: get_by_id(rel['tar_id']).get('ov') for rel in md['src_rels']
+        },
+        'Target Relations': {
+            rel['name']: get_by_id(rel['src_id']).get('ov') for rel in md['tar_rels']
+        },
+    }
     data = {
-        'md': htmlify(md),
+        'md': htmlify(better_md),
         'image_path': pth,
         'ms_name': m.directory,
+        'title': title,
     }
     return render(request, "templates/diva.html", data)
