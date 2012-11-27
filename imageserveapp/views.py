@@ -1,14 +1,12 @@
 import os
 import conf
-import json
-from urllib import urlopen
+from json import dumps
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.encoding import smart_text
 from divaserve import tryint, alphanum_key
-from imageserveapp import img_server, JSON_INTERFACE
+from imageserveapp import img_server, JSON_INTERFACE, get_by_ismi_id
 from imageserveapp.models import Manuscript
-
 
 def main(request):
     """The main view, where users can browse available manuscripts."""
@@ -20,22 +18,22 @@ def diva(request):
     """View for divaserve"""
     msdir = request.GET.get('d')
     js = img_server.getc(msdir)
-    return HttpResponse(json.dumps(js), content_type="application/json")
+    return HttpResponse(dumps(js), content_type="application/json")
 
 def canvas(request):
     pass
 
 def manuscript(request, ms_id):
     """The view for displaying a specific manuscript."""
-    def get_by_id(iden):
-        u = urlopen(JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(iden))
-        ent = json.loads(u.read())['ent']
-        u.close()
-        return ent
     m = Manuscript.objects.get(id=ms_id)
-    md = get_by_id(m.ismi_id)
+    ent = get_by_ismi_id(m.ismi_id)
     pth = os.path.join(conf.IMG_DIR, m.directory)
     def htmlify(s):
+        """
+        This is a hacky way of turning an "arbitrary" Python object
+        into HTML. The point is to make the metadata dict into a nice
+        table which can be displayed in the "Metadata" modal.
+        """
         post = ''
         if isinstance(s,dict):
             post += u"<table class=\"table table-bordered\">"
@@ -48,25 +46,24 @@ def manuscript(request, ms_id):
         else:
             post += unicode(s)
         return post
-    ms_title = md['ov']
-    author_id = [rel for rel in md['src_rels'] if rel['name'] == 'was_created_by'][0]['tar_id']
-    ms_author = get_by_id(author_id)['ov']
+    ms_title = m.title()
+    ms_author = m.author()
     title = u'{0}<br /><br />Author: {1}'.format(ms_title, ms_author)
-    better_md = {
+    md = {
         'Title': ms_title,
         'Author': ms_author,
         'Attributes': {
-            att['name']: att.get('ov') for att in md['atts']
+            att['name']: att.get('ov') for att in ent['atts']
         },
         'Source Relations': {
-            rel['name']: get_by_id(rel['tar_id']).get('ov') for rel in md['src_rels']
+            rel['name']: get_by_ismi_id(rel['tar_id']).get('ov') for rel in ent['src_rels']
         },
         'Target Relations': {
-            rel['name']: get_by_id(rel['src_id']).get('ov') for rel in md['tar_rels']
+            rel['name']: get_by_ismi_id(rel['src_id']).get('ov') for rel in ent['tar_rels']
         },
     }
     data = {
-        'md': htmlify(better_md),
+        'md': htmlify(md),
         'image_path': pth,
         'ms_name': m.directory,
         'title': title,

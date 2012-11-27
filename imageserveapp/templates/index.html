@@ -6,11 +6,15 @@
     <table class="table table-striped">
         <tr>
             <th>Manuscript Name</th>
+            <th>Title</th>
+            <th>Author</th>
             <th>Number of Images</th>
         </tr>
     {% for m in manuscripts %}
         <tr>
-            <td><a href="/witness/{{m.id}}">{{m.directory}}</a></td>
+            <td><a href="/witness/{{m.id}}">{{ m.directory }}</a></td>
+            <td>{{ m.title }}</td>
+            <td>{{ m.author }}
             <td>{{ m.num_files }}</td>
         </tr>
     {% endfor %}
