@@ -20,21 +20,6 @@ class FolderField(models.FilePathField):
 		super(FolderField,self).__init__(*args, **kwargs)
 	
 
-class RelDisplaySettings(dbsettings.Group):
-	"""
-	Group of settings for how to display a single ISMI source-relation.
-	"""
-	name = dbsettings.StringValue(
-		'the name for this relation to be displayed in the Metadata view'
-	)
-	show = dbsettings.BooleanValue(
-		'whether to show this relation in the Metadata view'
-	)
-	show_id = dbsettings.BooleanValue(
-		'whether to show the ID of the relation\'s '
-		+'target/source in the Metadata view'
-	)
-
 # this is some deeply evil hackery. Oh Guido, forgive me for I have sinned.
 # It's supposed to check with the ISMI database with the ismi_witness_def
 # call, and then dynamically create classes for all of the attributes and
@@ -42,7 +27,10 @@ class RelDisplaySettings(dbsettings.Group):
 # seems to work perfectly and all the correct settings are maintained when
 # you do syncdb or south migrations, so I'm going to count my lucky stars
 # on this one.
+
 w = ismi_witness_def()
+
+# create the classes for the attributes
 for a in w['atts']:
 	globals()[a['ov']+"_display_settings"] = type(
 		str(a['ov']+"_display_settings"),
@@ -67,6 +55,8 @@ for a in w['atts']:
 			'display_settings': eval(a['ov']+"_display_settings()"),
 		}
 	)
+
+# create the classes for the relations
 for r in w['src_rels']+w['tar_rels']:
 	globals()[r['name']+"_display_settings"] = type(
 		str(r['name']+"_display_settings"),
