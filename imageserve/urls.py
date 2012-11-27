@@ -8,4 +8,5 @@ urlpatterns = patterns('',
     # Examples:
     url(r'^', include('imageserveapp.urls')),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^settings/', include('dbsettings.urls')),
 )

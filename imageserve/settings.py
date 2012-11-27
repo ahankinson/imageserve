@@ -125,6 +125,7 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'south',
     'imageserveapp',
+    'dbsettings',
 )
 
 # A sample logging configuration. The only tangible logging
