@@ -1,10 +1,8 @@
 from os import listdir
 from os.path import isdir, join
 from django.db import models
-import dbsettings
 from conf import IMG_DIR
 from south.modelsinspector import add_introspection_rules
-from imageserveapp import get_by_ismi_id, ismi_witness_def
 
 add_introspection_rules([],["^imageserveapp\.models\.FolderField"])
 
@@ -20,72 +18,52 @@ class FolderField(models.FilePathField):
 		super(FolderField,self).__init__(*args, **kwargs)
 	
 
-# this is some deeply evil hackery. Oh Guido, forgive me for I have sinned.
-# It's supposed to check with the ISMI database with the ismi_witness_def
-# call, and then dynamically create classes for all of the attributes and
-# relations, so that each one can have its own display settings. It actually
-# seems to work perfectly and all the correct settings are maintained when
-# you do syncdb or south migrations, so I'm going to count my lucky stars
-# on this one.
+class AttDisplaySetting(models.Model):
+	"""
+	Global object in the database which holds the
+	settings for whether and how a certain ISMI
+	attribute (on either a Manuscript's associated
+	WITNESS or the TEXT it is exemplar of) should
+	be displayed in the Metadata view.
+	"""
+	name = models.CharField(max_length=200, unique=True, editable=False)
+	display_name = models.CharField(max_length=200, null=True)
+	show = models.BooleanField(default=True)
+	on_ent = models.BooleanField(editable=False)
+	
+	def __unicode__(self):
+		return unicode(self.name)
+	
+	def save(self, *args, **kwargs):
+		if self.display_name is None:
+			self.display_name = self.name
+		super(AttDisplaySetting, self).save(*args, **kwargs)
+	
 
-w = ismi_witness_def()
-
-# create the classes for the attributes
-for a in w['atts']:
-	globals()[a['ov']+"_display_settings"] = type(
-		str(a['ov']+"_display_settings"),
-		(dbsettings.Group,),
-		{
-			'name': dbsettings.StringValue(
-				'the name for this attribute to be '
-				+'displayed in the Metadata view',
-				default=a['ov'],
-			),
-			'show': dbsettings.BooleanValue(
-				'whether to show this attribute in the Metadata view',
-				default=True,
-			),
-		}
-	)
-	globals()[a['ov']] = type(
-		str(a['ov']),
-		(models.Model,),
-		{
-			'__module__': __name__,
-			'display_settings': eval(a['ov']+"_display_settings()"),
-		}
-	)
-
-# create the classes for the relations
-for r in w['src_rels']+w['tar_rels']:
-	globals()[r['name']+"_display_settings"] = type(
-		str(r['name']+"_display_settings"),
-		(dbsettings.Group,),
-		{
-			'name': dbsettings.StringValue(
-				'the name for this relation to be '
-				+'displayed in the Metadata view',
-				default=r['name'],
-			),
-			'show': dbsettings.BooleanValue(
-				'whether to show this relation in the Metadata view',
-				default=True,
-			),
-			'show_id': dbsettings.BooleanValue(
-				'whether to show the ID of the relation\'s '
-				+'target/source in the Metadata view',
-				default=False,
-			)
-		}
-	)
-	globals()[r['name']] = type(
-		str(r['name']),
-		(models.Model,),
-		{
-			'__module__': __name__,
-			'display_settings': eval(r['name']+"_display_settings()"),
-		}
-	)
+class RelDisplaySetting(models.Model):
+	"""
+	Global object in the database which holds the
+	settings for whether and how a certain ISMI
+	relation (on either a Manuscipt's associated
+	WITNESS or the TEXT it is exemplar of) should
+	be displayed in the Metadata view.
+	"""
+	rel_type = models.CharField(choices=[('src','src'),('tar','tar')],
+	                            max_length=200,
+	                            editable=False)
+	show_id = models.BooleanField()
+	name = models.CharField(max_length=200, unique=True, editable=False)
+	display_name = models.CharField(max_length=200, null=True)
+	show = models.BooleanField(default=True)
+	on_ent = models.BooleanField(editable=False)
+	
+	def __unicode__(self):
+		return unicode(self.name)
+	
+	def save(self, *args, **kwargs):
+		if self.display_name is None:
+			self.display_name = self.name
+		super(RelDisplaySetting, self).save(*args, **kwargs)
 
 class Manuscript(models.Model):
 	"""
@@ -94,31 +72,6 @@ class Manuscript(models.Model):
 	directory = FolderField(path=IMG_DIR)
 	ismi_id = models.IntegerField(blank=True, null=True)
 	num_files = models.IntegerField(editable=False)
-	
-	def author(self):
-		"""
-		Looks up the manuscript's author in the ISMI
-		database and returns their name.
-		
-		TODO: use memcached for this, or wrap it in
-		a metadata() method.
-		"""
-		ent = get_by_ismi_id(self.ismi_id)
-		author_id = [rel for rel in ent['src_rels'] if
-		             rel.get('name') == 'was_created_by'][0].get('tar_id')
-		author = get_by_ismi_id(author_id)
-		return author.get('ov')
-	
-	def title(self):
-		"""
-		Looks up the manuscript's ISMI entity and
-		returns its title.
-		
-		TODO: use memcached for this, or wrap it in
-		a metadata() method.
-		"""
-		ent = get_by_ismi_id(self.ismi_id)
-		return ent.get('ov')
 	
 	def save(self, *args, **kwargs):
 		self.num_files = len(listdir(join(IMG_DIR, self.directory)))
