@@ -1,5 +1,5 @@
 # Django settings for imageserve project.
-import imageserveapp
+import imageserve
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -103,7 +103,7 @@ ROOT_URLCONF = 'imageserve.urls'
 WSGI_APPLICATION = 'imageserve.wsgi.application'
 
 TEMPLATE_DIRS = (
-    '/Users/jamieklassen/Documents/Code/imageserve/imageserveapp',
+    '/Users/jamieklassen/Documents/Code/imageserve/imageserve',
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -119,8 +119,9 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     'django.contrib.admindocs',
+	'django_extensions',
     'south',
-    'imageserveapp',
+    'imageserve',
 )
 
 # A sample logging configuration. The only tangible logging
