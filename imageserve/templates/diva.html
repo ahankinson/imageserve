@@ -26,7 +26,7 @@
         var dv = $('#diva-wrapper').data('diva');
         $('#diva-wrapper').ajaxComplete(function(event, xhr, options) {
             $('#1-diva-tools-right').prepend('<div id="metadata-button" style="float:left"><a href="#myModal" role="button" class="btn" data-toggle="modal">Metadata</a></div>');
-            $('#1-diva-title').html('{{title|safe}}');
+            $('#1-diva-title').html('{{title}}<br/><br/>Author: {{author}}');
         });
     });
     </script>
@@ -41,7 +41,11 @@
         <h3 id="myModalLabel">Metadata for {{ms_name}}</h3>
       </div>
       <div class="modal-body">
-        {{md|safe}}
+        <table class="table table-bordered">
+          {% for key, val in md %}
+            <tr><td>{{key}}</td><td>{{val}}</td></tr>
+          {% endfor %}
+        </table>
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>

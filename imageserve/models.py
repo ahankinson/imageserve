@@ -2,6 +2,7 @@ from os import listdir
 from os.path import isdir, join
 from django.db import models
 from conf import IMG_DIR
+from imageserve import get_by_ismi_id
 from south.modelsinspector import add_introspection_rules
 
 add_introspection_rules([],["^imageserve\.models\.FolderField"])
@@ -29,7 +30,40 @@ class AttDisplaySetting(models.Model):
 	name = models.CharField(max_length=200, unique=True, editable=False)
 	display_name = models.CharField(max_length=200, null=True)
 	show = models.BooleanField(default=True)
-	on_ent = models.BooleanField(editable=False)
+	on_ent = models.CharField(max_length=200, editable=False)
+	
+	def ent_getter(self, ID):
+		"""
+		Since not all attributes are on the actual witness displayed
+		in the viewer, this method finds the appropriate entity for the
+		attribute the setting concerns.
+		"""
+		curr_ent = get_by_ismi_id(ID)
+		if self.on_ent == 'self':
+			return curr_ent
+		src_match = [r for r in curr_ent['src_rels'] if r['name'] == self.on_ent]
+		if src_match:
+			return get_by_ismi_id(src_match[0]['tar_id'])
+		else:
+			tar_match = [r for r in curr_ent['tar_rels'] if r['name'] == self.on_ent]
+			return get_by_ismi_id(tar_match[0]['src_id'])
+	
+	def get_val(self, ID):
+		"""
+		Given the id of a (codex or witness, not yet decided),
+		return the value of this attribute as it would appear
+		in the metadata view for the (codex or witness) in question.
+		"""
+		ent = self.ent_getter(ID)
+		match = [a for a in ent['atts'] if a['name'] == self.name]
+		if match:
+			val = match[0].get('ov')
+			if val is not None:
+				return val
+			else:
+				return "Data missing"
+		else:
+			return "Data missing"
 	
 	def __unicode__(self):
 		return unicode(self.name)
@@ -48,14 +82,46 @@ class RelDisplaySetting(models.Model):
 	WITNESS or the TEXT it is exemplar of) should
 	be displayed in the Metadata view.
 	"""
-	rel_type = models.CharField(choices=[('src','src'),('tar','tar')],
-	                            max_length=200,
-	                            editable=False)
 	show_id = models.BooleanField()
 	name = models.CharField(max_length=200, unique=True, editable=False)
 	display_name = models.CharField(max_length=200, null=True)
 	show = models.BooleanField(default=True)
-	on_ent = models.BooleanField(editable=False)
+	on_ent = models.CharField(max_length=200, editable=False)
+	
+	def ent_getter(self, ID):
+		"""
+		Since not all relations are on the actual witness displayed
+		in the viewer, this method finds the appropriate entity for the
+		relation this setting concerns.
+		"""
+		curr_ent = get_by_ismi_id(ID)
+		if self.on_ent == 'self':
+			return curr_ent
+		src_match = [r for r in curr_ent['src_rels'] if r['name'] == self.on_ent]
+		if src_match:
+			return get_by_ismi_id(src_match[0]['tar_id'])
+		else:
+			tar_match = [r for r in curr_ent['tar_rels'] if r['name'] == self.on_ent]
+			return get_by_ismi_id(tar_match[0]['src_id'])
+	
+	def get_val(self, ID):
+		"""
+		Given the id of a (codex or witness, not yet decided),
+		return the value of this relation as it would appear
+		in the metadata view for the (codex or witness) in question.
+		"""
+		ent = self.ent_getter(ID)
+		if self.name == 'was_created_by':
+			print self.on_ent
+		src_match = [r for r in ent['src_rels'] if r['name'] == self.name]
+		if src_match:
+			return get_by_ismi_id(src_match[0]['tar_id'])['ov']
+		else:
+			tar_match = [r for r in ent['tar_rels'] if r['name'] == self.name]
+			if tar_match:
+				return get_by_ismi_id(tar_match[0]['src_id'])['ov']
+			else:
+				return "Data missing"
 	
 	def __unicode__(self):
 		return unicode(self.name)
