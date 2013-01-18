@@ -29,10 +29,10 @@ def manuscript(request, ms_id):
     # therein
     m = Manuscript.objects.get(id=ms_id)
     pth = os.path.join(conf.IMG_DIR, m.directory)
-    ms_title = get_keyval(RelDisplaySetting.objects.get(name='is_exemplar_of'))[1]
-    ms_author = get_keyval(RelDisplaySetting.objects.get(name='was_created_by'))[1]
-    md = [get_keyval(a) for a in AttDisplaySetting.objects.filter(show=True)]+\
-         [get_keyval(r) for r in RelDisplaySetting.objects.filter(show=True)]
+    ms_title = get_keyval(RelDisplaySetting.objects.get(name='is_exemplar_of'), ms_id)[1]
+    ms_author = get_keyval(RelDisplaySetting.objects.get(name='was_created_by'), ms_id)[1]
+    md = [get_keyval(a, ms_id) for a in AttDisplaySetting.objects.filter(show=True)]+\
+         [get_keyval(r, md_id) for r in RelDisplaySetting.objects.filter(show=True)]
     data = {
         'md': md,
         'image_path': pth,
