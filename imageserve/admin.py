@@ -1,5 +1,5 @@
 from django.contrib import admin
-from imageserve import JSON_INTERFACE
+from imageserve.settings import JSON_INTERFACE
 from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
 from json import loads
 from urllib import urlopen

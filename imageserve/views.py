@@ -3,9 +3,8 @@ import conf
 from json import dumps
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.utils.encoding import smart_text
-from divaserve import tryint, alphanum_key
-from imageserve import img_server, JSON_INTERFACE, get_by_ismi_id, get_rel_endpoint
+from imageserve import img_server
+from imageserve.helpers import get_keyval
 from imageserve.models import Manuscript, AttDisplaySetting, RelDisplaySetting
 
 def main(request):
@@ -30,10 +29,6 @@ def manuscript(request, ms_id):
     # therein
     m = Manuscript.objects.get(id=ms_id)
     pth = os.path.join(conf.IMG_DIR, m.directory)
-    def get_keyval(setting):
-        key = setting.display_name
-        val = setting.get_val(m.ismi_id)
-        return (key, val)
     ms_title = get_keyval(RelDisplaySetting.objects.get(name='is_exemplar_of'))[1]
     ms_author = get_keyval(RelDisplaySetting.objects.get(name='was_created_by'))[1]
     md = [get_keyval(a) for a in AttDisplaySetting.objects.filter(show=True)]+\

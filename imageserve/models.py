@@ -2,7 +2,7 @@ from os import listdir
 from os.path import isdir, join
 from django.db import models
 from conf import IMG_DIR
-from imageserve import get_by_ismi_id
+from imageserve.helpers import get_by_ismi_id
 from south.modelsinspector import add_introspection_rules
 
 add_introspection_rules([],["^imageserve\.models\.FolderField"])
