@@ -12,6 +12,18 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+        'LOCATION': 'localhost:11211',
+        'BINARY': True,
+        'OPTIONS': {
+            'tcp_nodelay': True,
+            'ketama': True
+        }
+    }
+}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.

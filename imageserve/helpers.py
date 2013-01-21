@@ -1,6 +1,7 @@
 from urllib import urlopen
 from json import loads
 from imageserve.settings import JSON_INTERFACE
+from django.core.cache import cache
 
 
 def get_keyval(setting, iden):
@@ -14,9 +15,16 @@ def get_by_ismi_id(iden):
 	all the relevant info from the ISMI database entity corresponding to
 	that id.
 	"""
-	u = urlopen(JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(iden))
-	ent = loads(u.read())['ent']
-	u.close()
+	ent = cache.get(iden)
+	if ent is None:
+		u = urlopen(JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(iden))
+		s = u.read()
+		try:
+			ent = loads(s)['ent']
+		except KeyError:
+			print s
+		u.close()
+		cache.set(iden, ent)
 	return ent
 
 def get_rel_endpoint(ent, rel, rel_type):
