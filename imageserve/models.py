@@ -3,65 +3,18 @@ from os.path import isdir, join
 from django.db import models
 from django import forms
 from django.contrib import admin
+from django.utils.safestring import mark_safe
+from django.core.exceptions import ValidationError
 from conf import IMG_DIR
 from imageserve.helpers import get_by_ismi_id
 from south.modelsinspector import add_introspection_rules
 
 
-add_introspection_rules([],["^imageserve\.models\.PageNumbersWidget"])
-add_introspection_rules([],["^imageserve\.models\.PageNumbersFormField"])
-add_introspection_rules([],["^imageserve\.models\.PageNumbersField"])
+add_introspection_rules([],["^imageserve\.models\.WitnessListWidget"])
+add_introspection_rules([],["^imageserve\.models\.WitnessListFormField"])
+add_introspection_rules([],["^imageserve\.models\.WitnessListField"])
+add_introspection_rules([],["^imageserve\.models\.IsmiIdField"])
 add_introspection_rules([],["^imageserve\.models\.FolderField"])
-
-class PageNumbersWidget(forms.MultiWidget):
-	def __init__(self, *args, **kwargs):
-		print 'init called on widget with parameters', args, kwargs
-		fields = kwargs['fields']
-		self.labels = [f.label for f in fields]
-		data = {'widgets': (forms.TextInput for f in fields)}
-		super(WitnessListWidget, self).__init__(*args, **data)
-	def decompress(self, value):
-		print 'decompress called with value', value
-		if value:
-			return [i for _,i in eval(value)]
-		else:
-			return [None for w in self.labels]
-	def value_from_datadict(self, data, files, name):
-		print 'value_from_datadict called'
-		super(WitnessListWidget, self).value_from_datadict(data, files, name)
-	def format_output(self, rendered_widgets):
-		print 'format_output called with rendered_widgets', rendered_widgets
-		zipped = [": ".join(t) for t in zip(self.labels, rendered_widgets)]
-		prerenders = [u'<tr><td>'+z+u'</td></tr>' for z in zipped]
-		rows = u'\n'.join(prerenders)
-		return u'<table>' + rows + u'</table>'
-
-class PageNumbersFormField(forms.MultiValueField):
-	def __init__(self, *args, **kwargs):
-		print 'init called on formfield with kwargs', kwargs
-		data = {
-			'widget': WitnessListWidget(fields=kwargs['fields']),
-			'label': 'Witnesses in this codex, with start pages'
-		}
-		kwargs.update(data)
-		super(WitnessListFormField, self).__init__(*args, **kwargs)
-	def compress(self, data_list):
-		print 'compress called with data_list', data_list
-		return zip(self.witnesses, data_list)
-
-class PageNumbersField(models.CommaSeparatedIntegerField):
-	description = """A list of the first page number of each witness
-	contained in this codex"""
-	__metaclass__ = models.SubfieldBase
-	def __init__(self, *args, **kwargs):
-		kwargs['max_length'] = 500
-		super(WitnessListField, self).__init__(*args, **kwargs)
-	def formfield(self, form_class=PageNumbersFormField, **kwargs):
-		labels = [get_by_ismi_id(w).get('ov') for w in self.witnesses]
-		fields = tuple(forms.IntegerField(label=l) for l in labels)
-		defaults = {'fields': fields}
-		defaults.update({k:v for k,v in kwargs.items() if k != 'max_length'})
-		return form_class(**defaults)
 
 class FolderField(models.FilePathField):
 	"""
@@ -124,10 +77,10 @@ class AttDisplaySetting(models.Model):
 	def __unicode__(self):
 		return unicode(self.name)
 	
-	def save(self, *args, **kwargs):
+	def clean(self, *args, **kwargs):
 		if self.display_name is None:
 			self.display_name = self.name
-		super(AttDisplaySetting, self).save(*args, **kwargs)
+		super(AttDisplaySetting, self).clean(*args, **kwargs)
 	
 
 class RelDisplaySetting(models.Model):
@@ -182,34 +135,143 @@ class RelDisplaySetting(models.Model):
 	def __unicode__(self):
 		return unicode(self.name)
 	
-	def save(self, *args, **kwargs):
+	def clean(self, *args, **kwargs):
 		if self.display_name is None:
 			self.display_name = self.name
-		super(RelDisplaySetting, self).save(*args, **kwargs)
-
+		super(RelDisplaySetting, self).clean(*args, **kwargs)
+	
+class IsmiIdField(models.IntegerField):
+	'''
+	Custom model field which must be a valid ID of a
+	Codex object from the ISMI database.
+	'''
+	def to_python(self, value):
+		c = None
+		try:
+			c = get_by_ismi_id(value)
+		except KeyError:
+			raise ValidationError("Invalid ISMI ID")
+		if c['oc'] != 'CODEX':
+			raise ValidationError("ISMI entity must be of type CODEX")
+		return value
+	
+class WitnessListFormField(forms.MultiValueField):
+	def compress(self, data_list):
+		return u','.join(map(unicode, data_list))
+	
+class WitnessListField(models.Field):
+	__metaclass__ = models.SubfieldBase
+	def db_type(self, connection):
+		return ('char(500)')
+	def to_python(self, value):
+		if value:
+			if isinstance(value, basestring):
+				return eval(value)
+			elif isinstance(value, (list, tuple)):
+				return list(value)
+			else:
+				return [value]
+		return None
+	def get_prep_value(self, value):
+		if isinstance(value, (list, tuple, basestring)):
+			return unicode(value)
+		else:
+			return unicode([value])
+	def formfield(self, form_class=WitnessListFormField, **kwargs):
+		if kwargs.get('max_length'):
+			kwargs.pop('max_length')
+		return form_class(**kwargs)
+	
+class WitnessListWidget(forms.MultiWidget):
+	def __init__(self, *args, **kwargs):
+		self.witnesses = kwargs.pop('witnesses')
+		widgets = [forms.TextInput for w in self.witnesses]
+		super(WitnessListWidget, self).__init__(widgets, **kwargs)
+	def decompress(self, value):
+		print 'decompress({0})'.format(value)
+		if value:
+			if isinstance(value, (list, tuple)):
+				return list(value)
+		return [None for w in self.witnesses]
+	def format_output(self, rendered_widgets):
+		labels = [get_by_ismi_id(w).get('ov') for w in self.witnesses]
+		zipped = [": ".join(t) for t in zip(labels, rendered_widgets)]
+		prerenders = [u'<tr><td>'+z+u'</td></tr>' for z in zipped]
+		rows = u'\n'.join(prerenders)
+		return u'<table>' + rows + u'</table>'
+	
 class Manuscript(models.Model):
 	"""
 	The model for all manuscripts in the RASI database. These correspond
 	to Codex objects in the ISMI database for metadata purposes.
 	"""
-	directory = FolderField(path=IMG_DIR)
-	ismi_id = models.IntegerField(blank=True, null=True)
+	directory = FolderField(path=IMG_DIR, unique=True)
+	ismi_id = IsmiIdField(blank=True, null=True)
 	num_files = models.IntegerField(editable=False)
 	witnesses = models.CommaSeparatedIntegerField(max_length=500, editable=False)
-	page_numbers = PageNumbersField()
+	witness_pages = WitnessListField()
 	
-	def save(self, *args, **kwargs):
+	def clean(self, *args, **kwargs):
 		self.num_files = len(listdir(join(IMG_DIR, self.directory)))
-		if self.witnesses is None:
+		if self.witnesses == u'':
 			c = get_by_ismi_id(self.ismi_id)
-			wits = [r['src_id'] for r in c['tar_rels'] if r['name'] == 'is_part_of']
-			self.witnesses = wits
-		w = self._meta.get_field_by_name('witnesses')[0]
-		w.editable = True
-		super(Manuscript, self).save(*args, **kwargs)
+			rels = [r for r in c['tar_rels'] if r['name'] == 'is_part_of']
+			wits = [r['src_id'] for r in rels]
+			if len(wits) > 1:
+				ents = [get_by_ismi_id(w) for w in wits]
+				def _first_page(folio):
+					pgs = folio.split('-')
+					if len(pgs) > 1:
+						return int(pgs[0])*2 # a folio is 2 pages
+					return None
+				folios = []
+				for e in ents:
+					folios_att = [a for a in e['atts'] if a['name'] == 'folios']
+					if folios_att:
+						folios_att = folios_att[0]
+						folios.append(folios_att['nov'])
+					else:
+						folios.append('')
+				pages = map(_first_page, folios)
+				sorted_wits = sorted(zip(wits, pages), key = lambda t:t[1])
+				self.witnesses = [w for w,_ in sorted_wits]
+				self.witness_pages = [p for _,p in sorted_wits]
+			else:
+				self.witnesses = wits
+				self.witness_pages = [1]
+		return super(Manuscript, self).clean(*args, **kwargs)
 	
 	def __unicode__(self):
 		return unicode(self.directory)
+	
+class ManuscriptAdminForm(forms.ModelForm):
+	'''
+	Custom admin form to take care of dynamically generating
+	the form widget corresponding to the page numbers of the
+	witnesses in a codex.
+	'''
+	class Meta:
+		model = Manuscript
+	def __init__(self, *args, **kwargs):
+		super(ManuscriptAdminForm, self).__init__(*args, **kwargs)
+		instance = kwargs.get('instance')
+		if instance:
+			wits = eval(instance.witnesses) # despite its scariness, this safely yields a tuple
+			self.fields['witness_pages'] = \
+				WitnessListFormField(fields=tuple(forms.IntegerField() for w in wits),
+									 widget=WitnessListWidget(witnesses=wits))
+		print self.fields
+	
+class ManuscriptAdmin(admin.ModelAdmin):
+	form = ManuscriptAdminForm
+	def get_form(self, request, obj=None, **kwargs):
+		if obj:
+			self.exclude = ()
+		else:
+			# there is no instance, so don't display
+			# the witnesses contained in it
+			self.exclude = ('witness_pages',)
+		return super(ManuscriptAdmin, self).get_form(request, obj, **kwargs)
 
 class ManuscriptGroup(models.Model):
 	"""

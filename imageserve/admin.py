@@ -5,7 +5,7 @@ from imageserve import models
 from json import loads
 from urllib import urlopen
 
-admin.site.register(models.Manuscript)
+admin.site.register(models.Manuscript, models.ManuscriptAdmin)
 admin.site.register(models.ManuscriptGroup)
 admin.site.register(models.AttDisplaySetting)
 admin.site.register(models.RelDisplaySetting)

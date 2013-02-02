@@ -19,10 +19,7 @@ def get_by_ismi_id(iden):
 	if ent is None:
 		u = urlopen(JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(iden))
 		s = u.read()
-		try:
-			ent = loads(s)['ent']
-		except KeyError:
-			print s
+		ent = loads(s)['ent']
 		u.close()
 		cache.set(iden, ent)
 	return ent
