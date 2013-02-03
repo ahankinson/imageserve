@@ -5,16 +5,16 @@
     <h1>Available Manuscripts</h1>
     <table class="table table-striped">
         <tr>
-            <th>Manuscript Name</th>
+            <th>Codex</th>
             <th>Title</th>
             <th>Author</th>
             <th>Number of Pages</th>
         </tr>
     {% for m in manuscripts %}
         <tr>
-            <td><a href="/witness/{{m.id}}">{{ m.directory }}</a></td>
+            <td><a href="/codex/{{m.id}}">{{ m.directory }}</a></td>
             <td>{{ m.title }}</td>
-            <td>{{ m.author }}
+            <td>{{ m.author }}</td>
             <td>{{ m.num_files }}</td>
         </tr>
     {% endfor %}

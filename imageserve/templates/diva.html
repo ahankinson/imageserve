@@ -6,11 +6,27 @@
 
 {% block header %}
     <link rel="stylesheet" href="{{ STATIC_URL }}css/diva.min.css" type="text/css" />
-    <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" type="text/css" />
 
     <script src="{{ STATIC_URL }}js/diva.min.js"></script>
 
     <script type="text/javascript">
+    var currWit = {{curr_wit}};
+    var witnesses = {{witnesses}};
+    var updateWitness = function(nextWit) {
+        $("#myModalBody").html("Loading Metadata...");
+        $("#1-diva-title").html("Loading Witness Title...")
+        $.ajax({
+            url: "/metadata",
+            context: document.body,
+            data: {'wit_id': witnesses[nextWit][0]},
+            beforeSend: function(xhr) {
+                xhr.overrideMimeType("text/json");
+            },
+        }).done(function(data, textStatus, jqXHR) {
+            $("#myModalBody").html(data['table']);
+            $('#1-diva-title').html(data['title_auth']);
+        });
+    };
     $(document).ready(function() {
         $('#diva-wrapper').diva({
             enableAutoHeight: true,
@@ -19,14 +35,22 @@
             iipServerURL: "localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
             divaserveURL: "/divaserve",
             imageDir: "{{ms_name}}",
-            // canvasPlugin: {
-            //     proxyURL: 'canvas'
-            // }
+            onScroll: function (newPageIndex) {
+                var nextWit = currWit;
+                for (var i = 0; i < witnesses.length; i++) {
+                    if (i + 1 >= witnesses.length) break;
+                    else if (witnesses[i][1] <= newPageIndex + 1 < witnesses[i+1][1]) {
+                        nextWit = i;
+                        break;
+                    } 
+                }
+                if (nextWit != currWit) updateWitness(nextWit);
+            },
         });
         var dv = $('#diva-wrapper').data('diva');
-        $('#diva-wrapper').ajaxComplete(function(event, xhr, options) {
-            $('#1-diva-tools-right').prepend('<div id="metadata-button" style="float:left"><a href="#myModal" role="button" class="btn" data-toggle="modal">Metadata</a></div>');
-            $('#1-diva-title').html('{{title}}<br/><br/>Author: {{author}}');
+        $('#diva-wrapper').one('ajaxComplete', function() {
+            $('#1-diva-tools-right').prepend('<div style="float:left">Titles in this Codex (Jump to first page)<select id="title-select">{% for i,title in titles %}<option value={{i}}>{{title}}</option>{% endfor %}</select></div><div id="metadata-button" style="float:left"><a href="#myModal" role="button" class="btn" data-toggle="modal">Metadata</a></div>');
+            updateWitness(currWit);
         });
     });
     </script>
@@ -40,13 +64,7 @@
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
         <h3 id="myModalLabel">Metadata for {{ms_name}}</h3>
       </div>
-      <div class="modal-body">
-        <table class="table table-bordered">
-          {% for key, val in md %}
-            <tr><td>{{key}}</td><td>{{val}}</td></tr>
-          {% endfor %}
-        </table>
-      </div>
+      <div id="myModalBody" class="modal-body"></div>
       <div class="modal-footer">
         <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>
       </div>

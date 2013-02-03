@@ -77,10 +77,10 @@ class AttDisplaySetting(models.Model):
 	def __unicode__(self):
 		return unicode(self.name)
 	
-	def clean(self, *args, **kwargs):
+	def save(self, *args, **kwargs):
 		if self.display_name is None:
 			self.display_name = self.name
-		super(AttDisplaySetting, self).clean(*args, **kwargs)
+		super(AttDisplaySetting, self).save(*args, **kwargs)
 	
 
 class RelDisplaySetting(models.Model):
@@ -120,8 +120,6 @@ class RelDisplaySetting(models.Model):
 		in the metadata view for the (codex or witness) in question.
 		"""
 		ent = self.ent_getter(ID)
-		if self.name == 'was_created_by':
-			print self.on_ent
 		src_match = [r for r in ent['src_rels'] if r['name'] == self.name]
 		if src_match:
 			return get_by_ismi_id(src_match[0]['tar_id'])['ov']
@@ -135,10 +133,10 @@ class RelDisplaySetting(models.Model):
 	def __unicode__(self):
 		return unicode(self.name)
 	
-	def clean(self, *args, **kwargs):
+	def save(self, *args, **kwargs):
 		if self.display_name is None:
 			self.display_name = self.name
-		super(RelDisplaySetting, self).clean(*args, **kwargs)
+		super(RelDisplaySetting, self).save(*args, **kwargs)
 	
 class IsmiIdField(models.IntegerField):
 	'''
@@ -162,7 +160,7 @@ class WitnessListFormField(forms.MultiValueField):
 class WitnessListField(models.Field):
 	__metaclass__ = models.SubfieldBase
 	def db_type(self, connection):
-		return ('char(500)')
+		return 'char(500)'
 	def to_python(self, value):
 		if value:
 			if isinstance(value, basestring):
@@ -188,7 +186,6 @@ class WitnessListWidget(forms.MultiWidget):
 		widgets = [forms.TextInput for w in self.witnesses]
 		super(WitnessListWidget, self).__init__(widgets, **kwargs)
 	def decompress(self, value):
-		print 'decompress({0})'.format(value)
 		if value:
 			if isinstance(value, (list, tuple)):
 				return list(value)
@@ -260,7 +257,6 @@ class ManuscriptAdminForm(forms.ModelForm):
 			self.fields['witness_pages'] = \
 				WitnessListFormField(fields=tuple(forms.IntegerField() for w in wits),
 									 widget=WitnessListWidget(witnesses=wits))
-		print self.fields
 	
 class ManuscriptAdmin(admin.ModelAdmin):
 	form = ManuscriptAdminForm
