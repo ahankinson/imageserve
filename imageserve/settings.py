@@ -1,9 +1,12 @@
 # Django settings for imageserve project.
 import imageserve
+import os
+
+PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 JSON_INTERFACE = "https://openmind-ismi-dev.mpiwg-berlin.mpg.de/om4-ismi/jsonInterface?"
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -117,7 +120,7 @@ ROOT_URLCONF = 'imageserve.urls'
 WSGI_APPLICATION = 'imageserve.wsgi.application'
 
 TEMPLATE_DIRS = (
-    '/Users/jamieklassen/Documents/Code/imageserve/imageserve',
+    PROJECT_PATH,
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.

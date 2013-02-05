@@ -5,6 +5,11 @@ from django.core.cache import cache
 
 
 def get_keyval(setting, iden):
+	"""
+	Given an AttSetting or a RelSetting object and an ISMI ID for a
+	WITNESS, return the name and value of that att or rel for the
+	given witness.
+	"""
 	key = setting.display_name
 	try:
 		val = setting.get_val(iden)

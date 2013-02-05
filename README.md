@@ -1,5 +1,5 @@
-Imageserve
-==========
+Imageserve - RASI Image Viewer
+==============================
 
 Description
 -----------
@@ -11,10 +11,11 @@ The requirements have been managed with virtualenv, so running `pip install -r r
 
 Setup
 -----
-Running 
+Make sure the parameter IMG_DIR in imageserve/conf.py is pointing to your image folder, and that in the declaration of the diva viewer in imageserve/templates/diva.html, the setting iipServerURL is pointing to the correct IIPImage server. Then, from the repository's root directory, execute 
 ```
 python manage.py schemamigration imageserve --initial
 python manage.py syncdb
 python manage.py migrate imageserve
+python manage.py runserver
 ```
-should get everything running. Also you will likely need to change the parameters in conf.py to correctly point to the images, and settings.py may need to be changed to correctly point to your local imageserve folder (there's probably a better way to do this automatically, which I have not considered since I expect nobody else will use this project).
+and everything should be up and running!
