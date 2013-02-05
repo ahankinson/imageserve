@@ -2,21 +2,28 @@
 
 {% block wrap %}
 <div class="container">
-    <h1>Available Manuscripts</h1>
+    <h1>Imageserve - RASI Image Viewer</h1>
     <table class="table table-striped">
         <tr>
-            <th>Codex</th>
+            <th rowspan="2">Codex</th>
+            <th rowspan="2">Number of Pages</th>
+            <th colspan="2">Witnesses</th>
+        </tr>
+        <tr>
             <th>Title</th>
             <th>Author</th>
-            <th>Number of Pages</th>
         </tr>
     {% for m in manuscripts %}
         <tr>
-            <td><a href="/codex/{{m.id}}">{{ m.directory }}</a></td>
-            <td>{{ m.title }}</td>
-            <td>{{ m.author }}</td>
-            <td>{{ m.num_files }}</td>
+            <td rowspan="{{m.num_witnesses}}"><a href="/codex/{{m.id}}">{{ m.directory }}</a></td>
+            <td rowspan="{{m.num_witnesses}}">{{ m.num_files }}</td>
         </tr>
+        {% for i, title, author in m.witness_infos %}
+            <tr>
+                <td><a href="/codex/{{m.id}}?curr_wit={{i}}">{{ title }}</a></td>
+                <td>{{ author }}</td>
+            </tr>
+        {% endfor %}
     {% endfor %}
     </table>
 </div>

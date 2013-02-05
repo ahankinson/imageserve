@@ -3,10 +3,11 @@ from os.path import isdir, join
 from django.db import models
 from django import forms
 from django.contrib import admin
+from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 from conf import IMG_DIR
-from imageserve.helpers import get_by_ismi_id
+from imageserve.helpers import get_by_ismi_id, get_keyval
 from south.modelsinspector import add_introspection_rules
 
 
@@ -207,6 +208,26 @@ class Manuscript(models.Model):
 	num_files = models.IntegerField(editable=False)
 	witnesses = models.CommaSeparatedIntegerField(max_length=500, editable=False)
 	witness_pages = WitnessListField()
+	witness_titles = models.CharField(max_length=2000, editable=False)
+	witness_authors = models.CharField(max_length=2000, editable=False)
+	
+	def num_witnesses(self):
+		"""
+		This method is designed for the manuscript index view, which uses
+		spanning rows in a table and so this method intentionally returns
+		a value which is larger than the actual number of witnesses.
+		"""
+		return len(eval(self.witnesses)) + 1
+	
+	def witness_infos(self):
+		"""
+		Generator for the authors & titles in this codex. Intended for
+		use with the manuscript index view.
+		"""
+		titles = self.witness_titles.split(',')
+		authors = self.witness_authors.split(',')
+		for i, (title, author) in enumerate(zip(titles, authors)):
+			yield i, title, author
 	
 	def clean(self, *args, **kwargs):
 		self.num_files = len(listdir(join(IMG_DIR, self.directory)))
@@ -236,6 +257,14 @@ class Manuscript(models.Model):
 			else:
 				self.witnesses = wits
 				self.witness_pages = [1]
+			get_title = lambda w: get_keyval(RelDisplaySetting.objects.get(
+			                                 name='is_exemplar_of'),
+			                                 w)[1]
+			get_author = lambda w: get_keyval(RelDisplaySetting.objects.get(
+			                                 name='was_created_by'),
+			                                 w)[1]
+			self.witness_titles = ",".join(map(get_title,wits))
+			self.witness_authors = ",".join(map(get_author,wits))
 		return super(Manuscript, self).clean(*args, **kwargs)
 	
 	def __unicode__(self):
@@ -276,6 +305,7 @@ class ManuscriptGroup(models.Model):
 	"""
 	name = models.CharField(max_length=200, blank=True)
 	manuscripts = models.ManyToManyField(Manuscript)
+	users = models.ManyToManyField(User, blank=True)
 	
 	def __unicode__(self):
 		return unicode(self.name)

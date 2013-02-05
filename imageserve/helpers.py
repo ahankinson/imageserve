@@ -6,7 +6,10 @@ from django.core.cache import cache
 
 def get_keyval(setting, iden):
 	key = setting.display_name
-	val = setting.get_val(iden)
+	try:
+		val = setting.get_val(iden)
+	except:
+		val = "Data Missing"
 	return (key, val)
 
 def get_by_ismi_id(iden):
