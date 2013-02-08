@@ -1,6 +1,6 @@
 from urllib import urlopen
 from json import loads
-from imageserve.settings import JSON_INTERFACE
+from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG
 from django.core.cache import cache
 
 
@@ -14,7 +14,7 @@ def get_keyval(setting, iden):
 	try:
 		val = setting.get_val(iden)
 	except:
-		val = "Data Missing"
+		val = NO_DATA_MSG
 	return (key, val)
 
 def get_by_ismi_id(iden):

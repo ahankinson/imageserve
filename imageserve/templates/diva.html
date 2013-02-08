@@ -15,7 +15,8 @@
     var updateWitness = function (nextWit) {
         currWit = nextWit;
         $("#myModalBody").html("Loading Metadata...");
-        $("#1-diva-title").html("Loading Witness Title...")
+        $("#witness-title").html("Loading Witness Title...");
+        $("#witness-author").html("Loading Witness Author...");
         $.ajax({
             url: "/metadata",
             context: document.body,
@@ -25,24 +26,29 @@
             },
         }).done(function (data, textStatus, jqXHR) {
             $("#myModalBody").html(data['table']);
-            $("#1-diva-title").html(data['title_auth']);
+            $("#witness-title").html(data['title']);
+            $("#witness-author").html(data['author']);
         });
         $("#title-select").val(nextWit);
     };
     $(document).ready(function () {
         $("#diva-wrapper").diva({
             enableAutoHeight: true,
-            enableAutoTitle: true,
+            enableAutoTitle: false,
+            enableGotoPage: true,
             fixedHeightGrid: false,
-            iipServerURL: "localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
-            divaserveURL: "/divaserve",
+            contained: true,
+            iipServerURL: "http://localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
+            divaserveURL: "http://localhost:8000/divaserve",
             imageDir: "{{ms_name}}",
             onScroll: function (newPageIndex) {
-                // alert(newPageIndex); DEBUGGING
                 var nextWit = currWit;
                 var currPage = this.getCurrentPage();
                 for (var i = 0; i < witnesses.length; i++) {
-                    if (i + 1 >= witnesses.length) break;
+                    if (i + 1 >= witnesses.length) {
+                        nextWit = witnesses.length - 1;
+                        break;
+                    }
                     else if (witnesses[i][1] <= currPage + 1 && currPage + 1 < witnesses[i+1][1]) {
                         nextWit = i;
                         break;
@@ -53,12 +59,12 @@
         });
         var dv = $("#diva-wrapper").data("diva");
         $("#diva-wrapper").one("ajaxComplete", function () {
-            $("#1-diva-tools-right").prepend('<div style="float:left">Titles in this Codex (Jump to first page)<select id="title-select">{% for i,title in titles %}<option value={{i}}>{{title}}</option>{% endfor %}</select></div><div id="metadata-button" style="float:left"><a href="#myModal" role="button" class="btn" data-toggle="modal">Metadata</a></div>');
             updateWitness(currWit);
+            dv.gotoPageByNumber(witnesses[currWit][1]);
             $("#title-select").change(function () {
                 var val = $("#title-select").val();
                 updateWitness(val);
-                dv.gotoPage(witnesses[val][1]);
+                dv.gotoPageByNumber(witnesses[val][1]);
             });
         });
     });
@@ -66,17 +72,39 @@
 {% endblock %}
 
 {% block wrap %}
-    <!-- Modal -->
-    <div id="myModal" class="modal hide fade" tabindex="-1" role="dialog"
-         aria-labelledby="myModalLabel" aria-hidden="true">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-        <h3 id="myModalLabel">Metadata for {{ms_name}}</h3>
-      </div>
-      <div id="myModalBody" class="modal-body"></div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>
-      </div>
+<div class="row-fluid">
+    <div class="span3">
+        <h3 id="witness-title">Witness Title</h3>
+        <h4 id="witness-author">Witness Author</h4>
+        <dl>
+            <dt>Titles in this Codex</dt>
+            <dd>
+                <select id="title-select">
+                    {% for i,title in titles %}
+                    <option value={{i}}>{{title}}</option>
+                    {% endfor %}
+                </select>
+                <a href="#myModal" role="button" class="btn" data-toggle="modal">Show Witness Info</a>
+            </dd>
+        </dl>
     </div>
+    <div class="span9">
     <div id="diva-wrapper"></div>
+    </div>
+<div>
+{% endblock %}
+
+{% block modal %}
+<!-- Modal -->
+<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog"
+     aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">Metadata for {{ms_name}}</h3>
+  </div>
+  <div id="myModalBody" class="modal-body"></div>
+  <div class="modal-footer">
+    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>
+  </div>
+</div>
 {% endblock %}
