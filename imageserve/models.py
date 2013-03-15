@@ -215,10 +215,16 @@ class Manuscript(models.Model):
     directory = FolderField(path=IMG_DIR, unique=True)
     ismi_id = IsmiIdField(blank=True, null=True)
     num_files = models.IntegerField(editable=False)
-    witnesses = models.CommaSeparatedIntegerField(max_length=500, editable=False)
+    witnesses = models.CommaSeparatedIntegerField(max_length=500,
+                                                  editable=False,
+                                                  null=True)
     witness_pages = WitnessListField()
-    witness_titles = models.CharField(max_length=2000, editable=False)
-    witness_authors = models.CharField(max_length=2000, editable=False)
+    witness_titles = models.CharField(max_length=2000,
+                                      editable=False,
+                                      null=True)
+    witness_authors = models.CharField(max_length=2000,
+                                       editable=False,
+                                       null=True)
     
     def num_witnesses(self):
         """
@@ -226,6 +232,8 @@ class Manuscript(models.Model):
         spanning rows in a table and so this method intentionally returns
         a value which is larger than the actual number of witnesses.
         """
+        if self.witnesses is None:
+            return 1
         return len(eval(self.witnesses)) + 1
     
     def witness_infos(self):
@@ -233,14 +241,15 @@ class Manuscript(models.Model):
         Generator for the authors & titles in this codex. Intended for
         use with the manuscript index view.
         """
-        titles = self.witness_titles.split(',')
-        authors = self.witness_authors.split(',')
-        for i, (title, author) in enumerate(zip(titles, authors)):
-            yield i, title, author
+        if self.witnesses is not None:
+            titles = self.witness_titles.split(',')
+            authors = self.witness_authors.split(',')
+            for i, (title, author) in enumerate(zip(titles, authors)):
+                yield i, title, author
     
     def clean(self, *args, **kwargs):
         self.num_files = len(listdir(join(IMG_DIR, self.directory)))
-        if self.witnesses == u'':
+        if self.witnesses is None and self.ismi_id is not None:
             c = get_by_ismi_id(self.ismi_id)
             rels = [r for r in c['tar_rels'] if r['name'] == 'is_part_of']
             wits = [r['src_id'] for r in rels]
@@ -249,7 +258,8 @@ class Manuscript(models.Model):
                 def _first_page(folio):
                     pgs = folio.split('-')
                     if len(pgs) > 1:
-                        return int(re.findall('\d+', pgs[0])[0])*2 # a folio is 2 pages
+                        # a folio is 2 pages
+                        return int(re.findall('\d+', pgs[0])[0])*2 
                     return None
                 folios = []
                 for e in ents:
@@ -274,15 +284,18 @@ class Manuscript(models.Model):
                                              w)[1]
             self.witness_titles = ",".join(map(get_title,wits))
             self.witness_authors = ",".join(map(get_author,wits))
-        (self.witnesses, self.witness_pages,
-        witness_titles,
-        witness_authors) = zip(*sorted(
-                            zip(list(eval(self.witnesses)), self.witness_pages,
-                                self.witness_titles.split(','),
-                                self.witness_authors.split(',')),
-                            key = lambda t: t[1]))
-        self.witness_titles = unicode(",".join(witness_titles))
-        self.witness_authors = unicode(",".join(witness_authors))
+        if self.witnesses is not None:
+            (self.witnesses,
+             self.witness_pages,
+             witness_titles,
+             witness_authors) = zip(*sorted(
+                                zip(list(eval(self.witnesses)),
+                                    self.witness_pages,
+                                    self.witness_titles.split(','),
+                                    self.witness_authors.split(',')),
+                                key = lambda t: t[1]))
+            self.witness_titles = unicode(",".join(witness_titles))
+            self.witness_authors = unicode(",".join(witness_authors))
         return super(Manuscript, self).clean(*args, **kwargs)
     
     def __unicode__(self):
@@ -300,16 +313,24 @@ class ManuscriptAdminForm(forms.ModelForm):
         super(ManuscriptAdminForm, self).__init__(*args, **kwargs)
         instance = kwargs.get('instance')
         if instance:
-            wits = eval(instance.witnesses) # despite its scariness, this safely yields a tuple
-            self.fields['witness_pages'] = \
-                WitnessListFormField(fields=tuple(forms.IntegerField() for w in wits),
+            if instance.witnesses is not None:
+                # despite its scariness, this safely yields a tuple
+                wits = eval(instance.witnesses)
+                self.fields['witness_pages'] = \
+                WitnessListFormField(fields=tuple(forms.IntegerField()
+                                                  for w in wits),
                                      widget=WitnessListWidget(witnesses=wits))
     
 class ManuscriptAdmin(admin.ModelAdmin):
     form = ManuscriptAdminForm
     def get_form(self, request, obj=None, **kwargs):
         if obj:
-            self.exclude = ()
+            if obj.witnesses is not None:
+                self.exclude = ()
+            else:
+                # object has no witnesses, so don't
+                # display a form element for them
+                self.exclude = ('witness_pages',)
         else:
             # there is no instance, so don't display
             # the witnesses contained in it

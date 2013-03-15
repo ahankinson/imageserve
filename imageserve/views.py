@@ -83,20 +83,28 @@ def manuscript(request, ms_id):
             if request.user not in group.users.all():
                 return redirect('/login/?next=%s' % request.path)
     pth = os.path.join(conf.IMG_DIR, m.directory)
-    wits = eval(m.witnesses)
-    if not curr_wit in range(len(wits)):
-        curr_wit = 0
-    w = wits[curr_wit]
-    zipped = zip(wits,m.witness_pages)
-    witnesses = dumps([[k,v] for k,v in zipped])
-    titles = m.witness_titles.split(',')
+    witnesses = None
+    titles = None
+    ismi_data = False
+    if m.ismi_id is not None:
+        ismi_data = True
+        if m.witnesses is not None:
+            wits = eval(m.witnesses)
+            if not curr_wit in range(len(wits)):
+                curr_wit = 0
+            w = wits[curr_wit]
+            zipped = zip(wits,m.witness_pages)
+            witnesses = SafeString(dumps([[k,v] for k,v in zipped]))
+            titles = enumerate(m.witness_titles.split(','))
     data = {
         'title': 'Imageserve - Viewing {0}'.format(m.directory),
         'curr_wit': curr_wit,
-        'witnesses': SafeString(witnesses),
+        'witnesses': witnesses,
         'image_path': pth,
         'ms_name': m.directory,
-        'titles': enumerate(titles),
+        'titles': titles,
+        'ismi_data': ismi_data,
+        'ms_id': ms_id,
     }
     return render(request, "templates/diva.html", data)
 

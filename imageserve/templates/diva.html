@@ -10,27 +10,29 @@
     <script src="{{ STATIC_URL }}js/diva.min.js"></script>
 
     <script type="text/javascript">
-    var currWit = {{curr_wit}};
-    var witnesses = {{witnesses}};
-    var updateWitness = function (nextWit) {
-        currWit = nextWit;
-        $("#myModalBody").html("Loading Metadata...");
-        $("#witness-title").html("Loading Witness Title...");
-        $("#witness-author").html("Loading Witness Author...");
-        $.ajax({
-            url: "/metadata",
-            context: document.body,
-            data: {'wit_id': witnesses[nextWit][0]},
-            beforeSend: function (xhr) {
-                xhr.overrideMimeType("text/json");
-            },
-        }).done(function (data, textStatus, jqXHR) {
-            $("#myModalBody").html(data['table']);
-            $("#witness-title").html(data['title']);
-            $("#witness-author").html(data['author']);
-        });
-        $("#title-select").val(nextWit);
-    };
+    {% if witnesses %}
+        var currWit = {{curr_wit}};
+        var witnesses = {{witnesses}};
+        var updateWitness = function (nextWit) {
+            currWit = nextWit;
+            $("#myModalBody").html("Loading Metadata...");
+            $("#witness-title").html("Loading Witness Title...");
+            $("#witness-author").html("Loading Witness Author...");
+            $.ajax({
+                url: "/metadata",
+                context: document.body,
+                data: {'wit_id': witnesses[nextWit][0]},
+                beforeSend: function (xhr) {
+                    xhr.overrideMimeType("text/json");
+                },
+            }).done(function (data, textStatus, jqXHR) {
+                $("#myModalBody").html(data['table']);
+                $("#witness-title").html(data['title']);
+                $("#witness-author").html(data['author']);
+            });
+            $("#title-select").val(nextWit);
+        };
+    {% endif %}
     $(document).ready(function () {
         $("#diva-wrapper").diva({
             enableAutoHeight: true,
@@ -41,32 +43,37 @@
             iipServerURL: "http://localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
             divaserveURL: "http://localhost:8000/divaserve",
             imageDir: "{{ms_name}}",
-            onScroll: function (newPageIndex) {
-                var nextWit = currWit;
-                var currPage = this.getCurrentPage();
-                for (var i = 0; i < witnesses.length; i++) {
-                    if (i + 1 >= witnesses.length) {
-                        nextWit = witnesses.length - 1;
-                        break;
+            {% if witnesses %}
+                onScroll: function (newPageIndex) {
+                    var nextWit = currWit;
+                    var currPage = this.getCurrentPage();
+                    for (var i = 0; i < witnesses.length; i++) {
+                        if (i + 1 >= witnesses.length) {
+                            nextWit = witnesses.length - 1;
+                            break;
+                        }
+                        else if (witnesses[i][1] <= currPage + 1
+                                 && currPage + 1 < witnesses[i+1][1]) {
+                            nextWit = i;
+                            break;
+                        } 
                     }
-                    else if (witnesses[i][1] <= currPage + 1 && currPage + 1 < witnesses[i+1][1]) {
-                        nextWit = i;
-                        break;
-                    } 
-                }
-                if (nextWit != currWit) updateWitness(nextWit);
-            },
+                    if (nextWit != currWit) updateWitness(nextWit);
+                },
+            {% endif %}
         });
         var dv = $("#diva-wrapper").data("diva");
-        $("#diva-wrapper").one("ajaxComplete", function () {
-            updateWitness(currWit);
-            dv.gotoPageByNumber(witnesses[currWit][1]);
-            $("#title-select").change(function () {
-                var val = $("#title-select").val();
-                updateWitness(val);
-                dv.gotoPageByNumber(witnesses[val][1]);
+        {% if witnesses %}
+            $("#diva-wrapper").one("ajaxComplete", function () {
+                updateWitness(currWit);
+                dv.gotoPageByNumber(witnesses[currWit][1]);
+                $("#title-select").change(function () {
+                    var val = $("#title-select").val();
+                    updateWitness(val);
+                    dv.gotoPageByNumber(witnesses[val][1]);
+                });
             });
-        });
+        {% endif %}
     });
     </script>
 {% endblock %}
@@ -74,19 +81,37 @@
 {% block wrap %}
 <div class="row-fluid">
     <div class="span3">
-        <h3 id="witness-title">Witness Title</h3>
-        <h4 id="witness-author">Witness Author</h4>
-        <dl>
-            <dt>Titles in this Codex</dt>
-            <dd>
-                <select id="title-select">
-                    {% for i,title in titles %}
-                    <option value={{i}}>{{title}}</option>
-                    {% endfor %}
-                </select>
-                <a href="#myModal" role="button" class="btn" data-toggle="modal">Show Witness Info</a>
-            </dd>
-        </dl>
+        {% if ismi_data %}
+            {% if witnesses %}
+                <h3 id="witness-title">Witness Title</h3>
+                <h4 id="witness-author">Witness Author</h4>
+                <dl>
+                    <dt>Titles in this Codex</dt>
+                    <dd>
+                        <select id="title-select">
+                            {% for i,title in titles %}
+                            <option value={{i}}>{{title}}</option>
+                            {% endfor %}
+                        </select>
+                        <a href="#myModal" role="button" class="btn" 
+                         data-toggle="modal">Show Witness Info</a>
+                    </dd>
+                </dl>
+            {% else %}
+                <h3>
+                    The ISMI data for this codex contains no witnesses.
+                </h3>
+            {% endif %}
+        {% else %}
+            <h3>No ISMI ID has been chosen for this codex.</h3>
+            {% if perms.manuscript.can_change %}
+                <h3>
+                    <a href="/admin/imageserve/manuscript/{{ms_id}}">
+                        Click to choose an ISMI ID for this codex now.
+                    </a>
+                </h3>
+            {% endif %}
+        {% endif %}
     </div>
     <div class="span9">
     <div id="diva-wrapper"></div>
