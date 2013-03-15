@@ -4800,6 +4800,11 @@ input[type="submit"].btn.btn-mini {
   overflow-y: auto;
 }
 
+.modal-body > .table {
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+
 .modal-form {
   margin-bottom: 0;
 }
