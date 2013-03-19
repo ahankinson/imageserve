@@ -324,17 +324,10 @@ class ManuscriptAdminForm(forms.ModelForm):
 class ManuscriptAdmin(admin.ModelAdmin):
     form = ManuscriptAdminForm
     def get_form(self, request, obj=None, **kwargs):
+        self.exclude = ('witness_pages',)
         if obj:
             if obj.witnesses is not None:
                 self.exclude = ()
-            else:
-                # object has no witnesses, so don't
-                # display a form element for them
-                self.exclude = ('witness_pages',)
-        else:
-            # there is no instance, so don't display
-            # the witnesses contained in it
-            self.exclude = ('witness_pages',)
         return super(ManuscriptAdmin, self).get_form(request, obj, **kwargs)
 
 class ManuscriptGroup(models.Model):

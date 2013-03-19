@@ -4,6 +4,7 @@ from json import dumps
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.utils.safestring import SafeString
+from urllib import quote_plus
 from django.template import Template, Context
 from django.contrib.auth.views import logout
 from imageserve import img_server
@@ -25,7 +26,8 @@ def main(request):
         return False
     data = {
         'manuscripts': filter(is_authenticated, Manuscript.objects.all()),
-        'title': 'Imageserve - Available Manuscripts'
+        'title': 'Imageserve - Available Manuscripts',
+        'path': quote_plus(request.get_full_path()),
     }
     return render(request, "templates/index.html", data)
 
@@ -105,9 +107,11 @@ def manuscript(request, ms_id):
         'titles': titles,
         'ismi_data': ismi_data,
         'ms_id': ms_id,
+        'path': quote_plus(request.get_full_path()),
     }
     return render(request, "templates/diva.html", data)
 
 def logout_view(request):
     logout(request)
-    return redirect('/')
+    next = request.GET['next']
+    return redirect(next)

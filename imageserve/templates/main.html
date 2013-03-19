@@ -14,7 +14,7 @@
         $(document).ready( function () {
             $("#login-button").on('click', function () {
                 $.get(
-                    "/login",
+                    "/login/?next={{ path }}",
                     function (data) {
                         $("#loginModalBody").html(data);
                         $("#loginModal").modal('show');
@@ -41,7 +41,11 @@
         <ul class="nav pull-right">
             {% if user.is_authenticated %}
                 <li><a>Currently logged in as: {{ user.username }}</a><li>
-                <li><a href="/logout">Log out</a></li>
+                <li>
+                    <a href='/logout/?next={{path}}'>
+                        Log out
+                    </a>
+                </li>
             {% else %}
                 <li><a id="login-button" href="#">Login</a></li>
             {% endif %}
