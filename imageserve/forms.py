@@ -112,11 +112,13 @@ class PageRangeListFormField(forms.MultiValueField):
     def compress(self, data_list):
         for i, pages in enumerate(data_list):
             for other_pages in data_list[i+1:]:
-                if (pages.first <= other_pages.first
-                  < pages.last <= other_pages.last or
-                    other_pages.first <= pages.first
-                  < other_pages.last <= pages.last):
-                    raise ValidationError("Overlapping page ranges")
+                if ((pages.first <= other_pages.first and
+                    other_pages.first <= pages.last and
+                    pages.last <= other_pages.last) or
+                   (other_pages.first <= pages.first and
+                    pages.first <= other_pages.last and
+                    other_pages.last <= pages.last)):
+                    raise forms.ValidationError("Overlapping page ranges")
         return PageRangeList(data_list)
 
 class PageRangeListWidget(forms.MultiWidget):
