@@ -12,25 +12,55 @@
     <script type="text/javascript">
     {% if witnesses %}
         var currWit = {{curr_wit}};
-        var witnesses = {{witnesses}};
+        var apiFunc = function (url) {
+            func = function (kwargs, callback) {
+                $.ajax({
+                    url: url,
+                    context: document.body,
+                    data: kwargs,
+                    beforeSend: function (xhr) {
+                        xhr.overrideMimeType("text/json");
+                    },
+                }).done(function (data, textStatus, jqXHR) {
+                    callback(data);
+                });
+            };
+            return func;
+        }
+        var pageForWit = apiFunc("/page_for_wit");
+        var witForPage = apiFunc("/wit_for_page");
+        var idForWit = apiFunc("/id_for_wit");
         var updateWitness = function (nextWit) {
             currWit = nextWit;
             $("#myModalBody").html("Loading Metadata...");
             $("#witness-title").html("Loading Witness Title...");
             $("#witness-author").html("Loading Witness Author...");
-            $.ajax({
-                url: "/metadata",
-                context: document.body,
-                data: {'wit_id': witnesses[nextWit][0]},
-                beforeSend: function (xhr) {
-                    xhr.overrideMimeType("text/json");
-                },
-            }).done(function (data, textStatus, jqXHR) {
-                $("#myModalBody").html(data['table']);
-                $("#witness-title").html(data['title']);
-                $("#witness-author").html(data['author']);
-            });
-            $("#title-select").val(nextWit);
+            if (nextWit != -1) {
+                $("#title-select").val(nextWit);
+                idForWit({'ms_id': {{ms_id}}, 'wit': nextWit},
+                        function (witId) {
+                            $.ajax({
+                                url: "/metadata",
+                                context: document.body,
+                                data: {'wit_id': witId},
+                                beforeSend: function (xhr) {
+                                    xhr.overrideMimeType("text/json");
+                                },
+                            }).done(function (data, textStatus, jqXHR) {
+                                $("#myModalBody").html(data['table']);
+                                $("#witness-title").html(data['title']);
+                                $("#witness-author").html(data['author']);
+                            });
+                         });
+            } else {
+                $("#myModalBody").html(
+                    "No witness has been identified for this page."
+                );
+                $("#witness-title").html(
+                    "No witness has been identified for this page."
+                );
+                $("#witness-author").html("");
+            }
         };
     {% endif %}
     $(document).ready(function () {
@@ -45,20 +75,13 @@
             imageDir: "{{ms_name}}",
             {% if witnesses %}
                 onScroll: function (newPageIndex) {
-                    var nextWit = currWit;
-                    var currPage = this.getCurrentPage();
-                    for (var i = 0; i < witnesses.length; i++) {
-                        if (i + 1 >= witnesses.length) {
-                            nextWit = witnesses.length - 1;
-                            break;
-                        }
-                        else if (witnesses[i][1] <= currPage + 1
-                                 && currPage + 1 < witnesses[i+1][1]) {
-                            nextWit = i;
-                            break;
-                        } 
-                    }
-                    if (nextWit != currWit) updateWitness(nextWit);
+                    var currPage = this.getCurrentPage() + 1;
+                    witForPage({'ms_id':{{ms_id}},
+                                'page': currPage},
+                                function (data) {
+                                    if (currWit != data)
+                                    updateWitness(data);
+                                });
                 },
             {% endif %}
         });
@@ -66,11 +89,17 @@
         {% if witnesses %}
             $("#diva-wrapper").one("ajaxComplete", function () {
                 updateWitness(currWit);
-                dv.gotoPageByNumber(witnesses[currWit][1]);
+                pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
+                           function (data) {
+                               dv.gotoPageByNumber(data);
+                           });
                 $("#title-select").change(function () {
                     var val = $("#title-select").val();
                     updateWitness(val);
-                    dv.gotoPageByNumber(witnesses[val][1]);
+                    pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
+                               function (data) {
+                                   dv.gotoPageByNumber(data);
+                               });
                 });
             });
         {% endif %}

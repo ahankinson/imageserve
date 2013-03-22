@@ -12,4 +12,7 @@ urlpatterns = patterns('',
     url(r'^divaserve/?', views.diva),
     url(r'^login/?', 'django.contrib.auth.views.login', {'template_name': 'templates/login.html'}),
     url(r'^logout/?', views.logout_view),
+    url(r'^wit_for_page$', views.wit_for_page),
+    url(r'^page_for_wit$', views.page_for_wit),
+    url(r'^id_for_wit$', views.id_for_wit)
 )

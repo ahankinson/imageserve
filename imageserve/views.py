@@ -90,18 +90,14 @@ def manuscript(request, ms_id):
     ismi_data = False
     if m.ismi_id is not None:
         ismi_data = True
-        if m.witnesses is not None:
-            wits = eval(m.witnesses)
-            if not curr_wit in range(len(wits)):
+        if m.witnesses:
+            if not curr_wit in range(len(m.witnesses)):
                 curr_wit = 0
-            w = wits[curr_wit]
-            zipped = zip(wits,m.witness_pages)
-            witnesses = SafeString(dumps([[k,v] for k,v in zipped]))
             titles = enumerate(m.witness_titles.split(','))
     data = {
         'title': 'Imageserve - Viewing {0}'.format(m.directory),
+        'witnesses': bool(m.witnesses),
         'curr_wit': curr_wit,
-        'witnesses': witnesses,
         'image_path': pth,
         'ms_name': m.directory,
         'titles': titles,
@@ -115,3 +111,26 @@ def logout_view(request):
     logout(request)
     next = request.GET['next']
     return redirect(next)
+
+def wit_for_page(request):
+    ms_id = int(request.GET.get('ms_id'))
+    page = int(request.GET.get('page'))
+    ms = Manuscript.objects.get(id=ms_id)
+    for i, pg_range in enumerate(ms.witness_pages):
+        if pg_range.first <= page and page <= pg_range.last:
+            return HttpResponse(dumps(i), mimetype="text/json")
+    return HttpResponse(dumps(-1), mimetype="text/json")
+
+def page_for_wit(request):
+    ms_id = int(request.GET.get('ms_id'))
+    wit = int(request.GET.get('wit'))
+    ms = Manuscript.objects.get(id=ms_id)
+    ret = list(ms.witness_pages)[wit].first
+    return HttpResponse(dumps(ret), mimetype="text/json")
+
+def id_for_wit(request):
+    ms_id = int(request.GET.get('ms_id'))
+    wit = int(request.GET.get('wit'))
+    ms = Manuscript.objects.get(id=ms_id)
+    ret = ms.witnesses[wit]
+    return HttpResponse(dumps(ret), mimetype="text/json")
