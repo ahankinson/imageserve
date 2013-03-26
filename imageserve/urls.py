@@ -14,5 +14,7 @@ urlpatterns = patterns('',
     url(r'^logout/?', views.logout_view),
     url(r'^wit_for_page$', views.wit_for_page),
     url(r'^page_for_wit$', views.page_for_wit),
-    url(r'^id_for_wit$', views.id_for_wit)
+    url(r'^id_for_wit$', views.id_for_wit),
+    url(r'^set_page/(?P<first_last>first|last)$', views.set_page),
+    url(r'^save_pages$', views.save_pages)
 )

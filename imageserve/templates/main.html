@@ -32,7 +32,6 @@
 
 </head>
 <body>
-{% block navbar %}
 <div class="navbar navbar-static-top">
     <div class="navbar-inner">
         <ul class="nav pull-left">
@@ -41,6 +40,10 @@
         <ul class="nav pull-right">
             {% if user.is_authenticated %}
                 <li><a>Currently logged in as: {{ user.username }}</a><li>
+            {% endif %}
+            {% block navbar %}
+            {% endblock %}
+            {% if user.is_authenticated %}
                 <li>
                     <a href='/logout/?next={{path}}'>
                         Log out
@@ -52,7 +55,6 @@
         </ul>
     </div>
 </div>
-{% endblock %}
 {% block loginmodal %}
 <div id="loginModal" class="modal hide fade" tabindex="-1" role="dialog"
      aria-labelledby="loginLabel" aria-hidden="true">

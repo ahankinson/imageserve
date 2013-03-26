@@ -11,6 +11,7 @@
 
     <script type="text/javascript">
     {% if witnesses %}
+        var editMode = false;
         var currWit = {{curr_wit}};
         var apiFunc = function (url) {
             func = function (kwargs, callback) {
@@ -75,18 +76,115 @@
             imageDir: "{{ms_name}}",
             {% if witnesses %}
                 onScroll: function (newPageIndex) {
-                    var currPage = this.getCurrentPage() + 1;
-                    witForPage({'ms_id':{{ms_id}},
-                                'page': currPage},
-                                function (data) {
-                                    if (currWit != data)
-                                    updateWitness(data);
-                                });
+                    if (!editMode) {
+                        var currPage = this.getCurrentPage() + 1;
+                        witForPage({'ms_id':{{ms_id}},
+                                    'page': currPage},
+                                    function (data) {
+                                        if (currWit != data)
+                                        updateWitness(data);
+                                    });
+                    }
                 },
             {% endif %}
         });
         var dv = $("#diva-wrapper").data("diva");
         {% if witnesses %}
+            var toggleEditMode = function () {
+                if (editMode) {
+                    editMode = false;
+                    $("#edit-pages").html("Edit page numbers");
+                    $("#page-tools").remove();
+                    $("#first-page-dd").remove();
+                    $("#last-page-dd").remove();
+                    $("#save-pages-dd").remove();
+                } else {
+                    editMode = true;
+                    $("#edit-pages").html("Stop editing");
+                    $("#witness-tools").append(
+                        $("<dt>", {id: "page-tools"})
+                        .append(document.createTextNode("Page Editing Tools:")),
+                        $("<dd>", {id: "first-page-dd"})
+                        .append(
+                            $("<a>", {id: "goto-first-page"})
+                            .attr({"href": "#",
+                                   "role": "button",
+                                   "class":"btn"})
+                            .append(document.createTextNode(
+                                "Go to first page"
+                            )),
+                            $("<a>", {id: "set-first-page"})
+                            .attr({"href": "#",
+                                   "role": "button",
+                                   "class":"btn"})
+                            .append(document.createTextNode("Set first page"))
+                        ),
+                        $("<dd>", {id: "last-page-dd"})
+                        .append(
+                            $("<a>", {id: "goto-last-page"})
+                            .attr({"href": "#",
+                                   "role": "button",
+                                   "class":"btn"})
+                            .append(document.createTextNode("Go to last page")),
+                            $("<a>", {id: "set-last-page"})
+                            .attr({"href": "#",
+                                   "role": "button",
+                                   "class":"btn"})
+                            .append(document.createTextNode("Set last page"))
+                        ),
+                        $("<dd>", {id: "save-pages-dd"})
+                        .append(
+                            $("<a>", {id: "save-pages"})
+                            .attr({"href": "#",
+                                   "role": "button",
+                                   "class":"btn"})
+                            .append(document.createTextNode("Save pages"))
+                        )
+                    );
+                    $("#goto-first-page").click( function () {
+                        pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
+                                   function (data) {
+                                       dv.gotoPageByNumber(data);
+                                   });
+                    });
+                    $("#goto-last-page").click( function () {
+                        pageForWit({'ms_id': {{ms_id}},
+                                    'wit': currWit,
+                                    'last': true},
+                                   function (data) {
+                                       dv.gotoPageByNumber(data);
+                                   });
+                    });
+                    $("#set-first-page").click( function () {
+                        apiFunc('/set_page/first')(
+                            {'ms_id': {{ms_id}},
+                             'wit': currWit,
+                             'page': dv.getCurrentPage() + 1},
+                            function () {}
+                        );
+                    });
+                    $("#set-last-page").click( function () {
+                        apiFunc('/set_page/last')(
+                            {'ms_id': {{ms_id}},
+                             'wit': currWit,
+                             'page': dv.getCurrentPage() + 1},
+                            function () {}
+                        );
+                    });
+                    $("#save-pages").click( function () {
+                        apiFunc('/save_pages')(
+                            {'ms_id': {{ms_id}}},
+                            function (data) {
+                                if (!data['success']) {
+                                    alert(data['error']);
+                                } else {
+                                    alert("Changes successfully saved.");
+                                }
+                            }
+                        );
+                    })
+                }
+            };
             $("#diva-wrapper").one("ajaxComplete", function () {
                 updateWitness(currWit);
                 pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
@@ -96,15 +194,24 @@
                 $("#title-select").change(function () {
                     var val = $("#title-select").val();
                     updateWitness(val);
-                    pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
-                               function (data) {
-                                   dv.gotoPageByNumber(data);
-                               });
+                    if (!editMode) {
+                        pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
+                                   function (data) {
+                                       dv.gotoPageByNumber(data);
+                                   });
+                    }
                 });
+                $("#edit-pages").click(toggleEditMode);
             });
         {% endif %}
     });
     </script>
+{% endblock %}
+
+{% block navbar %}
+    {% if perms.manuscript.can_change %}
+        <li><a href="#" id="edit-pages">Edit page numbers</a></li>
+    {% endif %}
 {% endblock %}
 
 {% block wrap %}
@@ -114,7 +221,7 @@
             {% if witnesses %}
                 <h3 id="witness-title">Witness Title</h3>
                 <h4 id="witness-author">Witness Author</h4>
-                <dl>
+                <dl id="witness-tools">
                     <dt>Titles in this Codex</dt>
                     <dd>
                         <select id="title-select">
@@ -123,7 +230,9 @@
                             {% endfor %}
                         </select>
                         <a href="#myModal" role="button" class="btn" 
-                         data-toggle="modal">Show Witness Info</a>
+                         data-toggle="modal" id="md-button">
+                            Show Witness Info
+                        </a>
                     </dd>
                 </dl>
             {% else %}

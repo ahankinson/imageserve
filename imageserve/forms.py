@@ -21,6 +21,8 @@ class PageRangeList(object):
     def __iter__(self):
         for pages in self._page_ranges:
             yield pages
+    def __getitem__(self, key):
+        return self._page_ranges[key]
 
 class IntegerListField(models.Field):
     description = "A list of integers"
@@ -64,6 +66,17 @@ class PageRangeListField(models.Field):
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
         return self.get_prep_value(value)
+    def clean(self, value, model_instance):
+        for i, pages in enumerate(value):
+            for other_pages in value[i+1:]:
+                if ((pages.first <= other_pages.first and
+                    other_pages.first <= pages.last and
+                    pages.last <= other_pages.last) or
+                   (other_pages.first <= pages.first and
+                    pages.first <= other_pages.last and
+                    other_pages.last <= pages.last)):
+                    raise forms.ValidationError("Overlapping page ranges")
+        return super(PageRangeListField, self).clean(value, model_instance)
     def formfield(self, **kwargs):
         defaults = {'form_class': PageRangeListFormField}
         defaults.update(kwargs)
