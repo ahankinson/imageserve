@@ -1,26 +1,26 @@
-from os import listdir
-from os.path import isdir, join
+import re
+import os
+# from os import listdir
+# from os.path import isdir, join
 from django.db import models
 from django.forms import ModelForm
 from django.contrib import admin
 from django.contrib.auth.models import User
-from django.utils.safestring import mark_safe
 from django.core.exceptions import ValidationError
 from conf import IMG_DIR
 from imageserve.helpers import get_by_ismi_id, get_keyval
 from imageserve.forms import IntegerListField, PageRangeListField
 from imageserve.forms import PageRange, PageRangeList
 from imageserve.forms import PageRangeListFormField
+from imageserve.settings import NO_DATA_MSG
 from south.modelsinspector import add_introspection_rules
-import re
 
 
+add_introspection_rules([], ["^imageserve\.models\.IsmiIdField"])
+add_introspection_rules([], ["^imageserve\.models\.FolderField"])
 
-add_introspection_rules([],["^imageserve\.models\.IsmiIdField"])
-add_introspection_rules([],["^imageserve\.models\.FolderField"])
 
 # MODEL FIELDS
-
 class FolderField(models.FilePathField):
     """
     In Django 1.5 this is implemented already, but this is just
@@ -28,9 +28,10 @@ class FolderField(models.FilePathField):
     """
     def __init__(self, *args, **kwargs):
         d = kwargs['path']
-        kwargs['choices'] = [(name,name) for name in listdir(d)
-                             if isdir(join(d,name))]
-        super(FolderField,self).__init__(*args, **kwargs)
+        kwargs['choices'] = [(name, name) for name in os.listdir(d)
+                             if os.path.isdir(os.path.join(d, name))]
+        super(FolderField, self).__init__(*args, **kwargs)
+
 
 class IsmiIdField(models.IntegerField):
     '''
@@ -47,8 +48,8 @@ class IsmiIdField(models.IntegerField):
             raise ValidationError("ISMI entity must be of type CODEX")
         return value
 
-# MODELS
 
+# MODELS
 class AttDisplaySetting(models.Model):
     """
     Global object in the database which holds the
@@ -60,14 +61,14 @@ class AttDisplaySetting(models.Model):
     ALWAYS_SHOW = 0
     SHOW_IF_SET = 1
     NEVER_SHOW = 2
-    SHOW_CHOICES = [(ALWAYS_SHOW,'always show'),
+    SHOW_CHOICES = [(ALWAYS_SHOW, 'always show'),
                     (SHOW_IF_SET, 'show if attribute has been set'),
                     (NEVER_SHOW, 'never show')]
     name = models.CharField(max_length=200, unique=True, editable=False)
     display_name = models.CharField(max_length=200, null=True)
     show = models.IntegerField(choices=SHOW_CHOICES, default=ALWAYS_SHOW)
     on_ent = models.CharField(max_length=200, editable=False)
-    
+
     def ent_getter(self, ID):
         """
         Since not all attributes are on the actual witness displayed
@@ -83,7 +84,7 @@ class AttDisplaySetting(models.Model):
         else:
             tar_match = [r for r in curr_ent['tar_rels'] if r['name'] == self.on_ent]
             return get_by_ismi_id(tar_match[0]['src_id'])
-    
+
     def get_val(self, ID):
         """
         Given the id of a (codex or witness, not yet decided),
@@ -97,15 +98,15 @@ class AttDisplaySetting(models.Model):
             if val is not None:
                 return val
         return NO_DATA_MSG
-    
+
     def __unicode__(self):
         return unicode(self.name)
-    
+
     def save(self, *args, **kwargs):
         if self.display_name is None:
             self.display_name = self.name
         super(AttDisplaySetting, self).save(*args, **kwargs)
-    
+
 
 class RelDisplaySetting(models.Model):
     """
@@ -118,7 +119,7 @@ class RelDisplaySetting(models.Model):
     ALWAYS_SHOW = 0
     SHOW_IF_SET = 1
     NEVER_SHOW = 2
-    SHOW_CHOICES = [(ALWAYS_SHOW,'always show'),
+    SHOW_CHOICES = [(ALWAYS_SHOW, 'always show'),
                     (SHOW_IF_SET, 'show if attribute has been set'),
                     (NEVER_SHOW, 'never show')]
     show_id = models.BooleanField()
@@ -126,7 +127,7 @@ class RelDisplaySetting(models.Model):
     display_name = models.CharField(max_length=200, null=True)
     show = models.IntegerField(choices=SHOW_CHOICES, default=ALWAYS_SHOW)
     on_ent = models.CharField(max_length=200, editable=False)
-    
+
     def ent_getter(self, ID):
         """
         Since not all relations are on the actual witness displayed
@@ -142,7 +143,7 @@ class RelDisplaySetting(models.Model):
         else:
             tar_match = [r for r in curr_ent['tar_rels'] if r['name'] == self.on_ent]
             return get_by_ismi_id(tar_match[0]['src_id'])
-    
+
     def get_val(self, ID):
         """
         Given the id of a (codex or witness, not yet decided),
@@ -158,14 +159,15 @@ class RelDisplaySetting(models.Model):
             if tar_match:
                 return get_by_ismi_id(tar_match[0]['src_id'])['ov']
         return NO_DATA_MSG
-    
+
     def __unicode__(self):
         return unicode(self.name)
-    
+
     def save(self, *args, **kwargs):
         if self.display_name is None:
             self.display_name = self.name
         super(RelDisplaySetting, self).save(*args, **kwargs)
+
 
 class Manuscript(models.Model):
     """
@@ -183,7 +185,7 @@ class Manuscript(models.Model):
     witness_authors = models.CharField(max_length=2000,
                                        editable=False,
                                        null=True)
-    
+
     def num_witnesses(self):
         """
         This method is designed for the manuscript index view, which uses
@@ -193,7 +195,7 @@ class Manuscript(models.Model):
         if not self.witnesses:
             return 1
         return len(self.witnesses) + 1
-    
+
     def witness_infos(self):
         """
         Generator for the authors & titles in this codex. Intended for
@@ -204,9 +206,9 @@ class Manuscript(models.Model):
             authors = self.witness_authors.split(',')
             for i, (title, author) in enumerate(zip(titles, authors)):
                 yield i, title, author
-    
+
     def clean(self, *args, **kwargs):
-        self.num_files = len(listdir(join(IMG_DIR, self.directory)))
+        self.num_files = len(os.listdir(os.path.join(IMG_DIR, self.directory)))
         if not self.witnesses and self.ismi_id is not None:
             try:
                 c = get_by_ismi_id(self.ismi_id)
@@ -218,14 +220,17 @@ class Manuscript(models.Model):
             wits = [r['src_id'] for r in rels]
             if len(wits) > 1:
                 ents = [get_by_ismi_id(w) for w in wits]
+
                 def get_pages(folio):
                     m = re.findall(r'(\d+)(a|b)?-(\d+)(a|b)?', folio)
                     if m:
                         first, first_ind, second, second_ind = m[0]
                         first = int(first)*2 - 1
-                        if 'b' == first_ind: first += 1
+                        if 'b' == first_ind:
+                            first += 1
                         second = int(second)*2
-                        if 'a' == second_ind: second -= 1
+                        if 'a' == second_ind:
+                            second -= 1
                         return PageRange(first, second)
                     return PageRange(None, None)
                 folios = []
@@ -238,37 +243,37 @@ class Manuscript(models.Model):
                         folios.append('')
                 pages = PageRangeList(map(get_pages, folios))
                 sorted_wits = sorted(zip(wits, pages),
-                                     key = lambda t:t[1].first)
-                self.witnesses = [w for w,_ in sorted_wits]
-                self.witness_pages = [p for _,p in sorted_wits]
+                                     key=lambda t: t[1].first)
+                self.witnesses = [w for w, _ in sorted_wits]
+                self.witness_pages = [p for _, p in sorted_wits]
             else:
                 self.witnesses = wits
                 self.witness_pages = \
-                    PageRangeList([PageRange(1,self.num_files)])
+                    PageRangeList([PageRange(1, self.num_files)])
             get_title = lambda w: get_keyval(RelDisplaySetting.objects.get(
                                              name='is_exemplar_of'),
                                              w)[1]
             get_author = lambda w: get_keyval(RelDisplaySetting.objects.get(
-                                             name='was_created_by'),
-                                             w)[1]
-            self.witness_titles = ",".join(map(get_title,wits))
-            self.witness_authors = ",".join(map(get_author,wits))
+                                              name='was_created_by'), w)[1]
+            self.witness_titles = ",".join(map(get_title, wits))
+            self.witness_authors = ",".join(map(get_author, wits))
         if self.witnesses and self.witness_pages:
             (self.witnesses,
              self.witness_pages,
              witness_titles,
              witness_authors) = zip(*sorted(
-                                zip(self.witnesses,
-                                    self.witness_pages,
-                                    self.witness_titles.split(','),
-                                    self.witness_authors.split(',')),
-                                key = lambda t: t[1].first))
+                                    zip(self.witnesses,
+                                        self.witness_pages,
+                                        self.witness_titles.split(','),
+                                        self.witness_authors.split(',')),
+                                    key=lambda t: t[1].first))
             self.witness_titles = unicode(",".join(witness_titles))
             self.witness_authors = unicode(",".join(witness_authors))
         return super(Manuscript, self).clean(*args, **kwargs)
-    
+
     def __unicode__(self):
         return unicode(self.directory)
+
 
 class ManuscriptGroup(models.Model):
     """
@@ -279,9 +284,10 @@ class ManuscriptGroup(models.Model):
     manuscripts = models.ManyToManyField(Manuscript)
     users = models.ManyToManyField(User, blank=True)
     public = models.BooleanField(default=False)
-    
+
     def __unicode__(self):
         return unicode(self.name)
+
 
 class ManuscriptAdminForm(ModelForm):
     '''
@@ -291,19 +297,21 @@ class ManuscriptAdminForm(ModelForm):
     '''
     class Meta:
         model = Manuscript
+
     def __init__(self, *args, **kwargs):
         super(ManuscriptAdminForm, self).__init__(*args, **kwargs)
         instance = kwargs.get('instance')
         if instance:
             if instance.witnesses:
-                self.fields['witness_pages'] = \
-                PageRangeListFormField(instance.witnesses)
+                self.fields['witness_pages'] = PageRangeListFormField(instance.witnesses)
+
 
 class ManuscriptAdmin(admin.ModelAdmin):
     form = ManuscriptAdminForm
     readonly_fields = ('num_files',)
+
     def get_form(self, request, obj=None, **kwargs):
-        self.exclude = ('witness_pages','num_files')
+        self.exclude = ('witness_pages', 'num_files')
         if obj:
             self.exclude = ('witness_pages',)
             if obj.witnesses:
