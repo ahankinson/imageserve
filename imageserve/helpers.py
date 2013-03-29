@@ -1,7 +1,6 @@
+import os
 from urllib import urlopen
 from json import loads
-from os import listdir
-from os.path import isdir, join
 from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG
 from imageserve.conf import IMG_DIR
 from django.core.cache import cache
@@ -20,6 +19,7 @@ def get_keyval(setting, iden):
         val = NO_DATA_MSG
     return (key, val)
 
+
 def get_by_ismi_id(iden):
     """
     Given a valid ISMI database id `iden`, return a Python dict containing
@@ -37,6 +37,7 @@ def get_by_ismi_id(iden):
         cache.set(iden, ent)
     return ent
 
+
 def get_rel_endpoint(ent, rel, rel_type):
     if 'src' == rel_type:
         match = [r for r in ent['src_rels'] if r['name'] == rel]
@@ -46,6 +47,7 @@ def get_rel_endpoint(ent, rel, rel_type):
         match = [r for r in ent['tar_rels'] if r['name'] == rel]
         if match:
             return get_by_ismi_id(match[0]['src_id'])
+
 
 def register_defs():
     """
@@ -82,12 +84,13 @@ def register_defs():
     for rel in witness_def['tar_rels']:
         if not RelDisplaySetting.objects.filter(name=rel['name']):
             sett = RelDisplaySetting(name=rel['name'], on_ent='self')
-            sett.save() 
+            sett.save()
 
     for rel in text_def['tar_rels']:
         if not RelDisplaySetting.objects.filter(name=rel['name']):
             sett = RelDisplaySetting(name=rel['name'], on_ent='is_exemplar_of')
             sett.save()
+
 
 def register_manuscripts():
     """
@@ -95,8 +98,8 @@ def register_manuscripts():
     database contains a Manuscript object for each.
     """
     from imageserve.models import Manuscript
-    for name in listdir(IMG_DIR):
-        if isdir(join(IMG_DIR,name)):
+    for name in os.listdir(IMG_DIR):
+        if os.path.isdir(os.path.join(IMG_DIR, name)):
             if not Manuscript.objects.filter(directory=name):
                 m = Manuscript(directory=name)
                 m.clean()
