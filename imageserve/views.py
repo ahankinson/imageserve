@@ -3,8 +3,8 @@ import conf
 from json import dumps
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.utils.safestring import SafeString
 from urllib import quote_plus
+from django.contrib.auth.decorators import login_required
 from django.template import Template, Context
 from django.contrib.auth.views import logout
 from django.forms import ValidationError
@@ -12,6 +12,7 @@ from imageserve import img_server
 from imageserve.helpers import get_keyval
 from imageserve.models import Manuscript, AttDisplaySetting, RelDisplaySetting
 from imageserve.settings import NO_DATA_MSG
+
 
 def main(request):
     """The main view, where users can browse available manuscripts."""
@@ -32,11 +33,13 @@ def main(request):
     }
     return render(request, "templates/index.html", data)
 
+
 def diva(request):
     """View for divaserve"""
     msdir = request.GET.get('d')
     js = img_server.getc(msdir)
     return HttpResponse(dumps(js), content_type="application/json")
+
 
 def metadata(request):
     """
@@ -44,12 +47,13 @@ def metadata(request):
     manuscript viewer page.
     """
     w = request.GET['wit_id']
-    
+
     table_template = Template('''<table class="table table-bordered">
       {% for key, val in md %}
         <tr><td>{{key}}</td><td>{{val}}</td></tr>
       {% endfor %}
     </table>''')
+
     def adder(clss, l):
         for a in clss.objects.all():
             if a.show != clss.NEVER_SHOW:
@@ -65,12 +69,13 @@ def metadata(request):
     adder(RelDisplaySetting, md)
     table_context = Context({'md': md})
     table = table_template.render(table_context)
-    
+
     ms_title = get_keyval(RelDisplaySetting.objects.get(name='is_exemplar_of'), w)[1]
     ms_author = get_keyval(RelDisplaySetting.objects.get(name='was_created_by'), w)[1]
-    
+
     data = {'table': table, 'title': ms_title, 'author': ms_author}
     return HttpResponse(dumps(data), mimetype="text/json")
+
 
 def manuscript(request, ms_id):
     """The view for displaying a specific manuscript."""
@@ -86,7 +91,7 @@ def manuscript(request, ms_id):
             if request.user not in group.users.all():
                 return redirect('/login/?next=%s' % request.path)
     pth = os.path.join(conf.IMG_DIR, m.directory)
-    witnesses = None
+    # witnesses = None
     titles = None
     ismi_data = False
     if m.ismi_id is not None:
@@ -108,6 +113,7 @@ def manuscript(request, ms_id):
     }
     return render(request, "templates/diva.html", data)
 
+
 def logout_view(request):
     """
     Logs out the current user.
@@ -115,6 +121,7 @@ def logout_view(request):
     logout(request)
     next = request.GET['next']
     return redirect(next)
+
 
 def get_curr_pgrnglist(request, ms_id):
     """
@@ -130,6 +137,8 @@ def get_curr_pgrnglist(request, ms_id):
     pgrnglist = request.session['pgrnglist'][ms_id]
     return pgrnglist
 
+
+@login_required
 def set_curr_pgrnglist(request, ms_id, pgrnglist):
     """
     Modifies the PageRangeList for the Manuscript object with id
@@ -139,6 +148,7 @@ def set_curr_pgrnglist(request, ms_id, pgrnglist):
         request.session['pgrnglist'] = {}
     request.session['pgrnglist'][ms_id] = pgrnglist
     request.session.modified = True
+
 
 def wit_for_page(request):
     """
@@ -153,6 +163,7 @@ def wit_for_page(request):
         if pg_range.first <= page and page <= pg_range.last:
             return HttpResponse(dumps(i), mimetype="text/json")
     return HttpResponse(dumps(-1), mimetype="text/json")
+
 
 def page_for_wit(request):
     """
@@ -169,6 +180,7 @@ def page_for_wit(request):
         ret = get_curr_pgrnglist(request, ms_id)[wit].first
     return HttpResponse(dumps(ret), mimetype="text/json")
 
+
 def id_for_wit(request):
     """
     Given a Manuscript id and the index of a witness in it,
@@ -180,6 +192,8 @@ def id_for_wit(request):
     ret = ms.witnesses[wit]
     return HttpResponse(dumps(ret), mimetype="text/json")
 
+
+@login_required
 def set_page(request, first_last):
     """
     In the page number editing mode, changes the first or
@@ -193,6 +207,8 @@ def set_page(request, first_last):
     set_curr_pgrnglist(request, ms_id, wit_pgs)
     return HttpResponse()
 
+
+@login_required
 def save_pages(request):
     """
     Saves the session-scope PageRangeList for the Manuscript
@@ -207,7 +223,7 @@ def save_pages(request):
         ms.save()
     except ValidationError as e:
         return HttpResponse(
-            dumps({"success":False, "error":str(e)}),
+            dumps({"success": False, "error": str(e)}),
             mimetype="text/json"
         )
     return HttpResponse(dumps({"success": True}), mimetype="text/json")
