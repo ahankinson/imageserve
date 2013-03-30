@@ -278,8 +278,8 @@ class ManuscriptGroup(models.Model):
     A group of manuscripts which fit
     under some common category.
     """
-    name = models.CharField(max_length=200, blank=True)
-    manuscripts = models.ManyToManyField(Manuscript)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    manuscripts = models.ManyToManyField(Manuscript, blank=True, null=True)
 
     class Meta:
         permissions = (
