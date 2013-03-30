@@ -39,6 +39,7 @@ class IntegerListField(models.Field):
         return 'char(500)'
 
     def to_python(self, value):
+        value = value.strip()
         if value:
             if isinstance(value, (list, tuple)):
                 return list(value)
@@ -61,6 +62,7 @@ class PageRangeListField(models.Field):
         return 'char(500)'
 
     def to_python(self, value):
+        value = value.strip()
         if value:
             if isinstance(value, PageRangeList):
                 return value
