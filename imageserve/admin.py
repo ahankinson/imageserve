@@ -38,7 +38,7 @@ class ManuscriptAdmin(GuardedModelAdmin):
 
 
 class ManuscriptGroupAdmin(GuardedModelAdmin):
-    pass
+    filter_horizontal = ('manuscripts',)
 
 # admin.site.register(models.Manuscript, models.ManuscriptAdmin)
 admin.site.register(Manuscript, ManuscriptAdmin)
