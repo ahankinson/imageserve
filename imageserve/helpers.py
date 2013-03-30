@@ -98,9 +98,12 @@ def register_manuscripts():
     database contains a Manuscript object for each.
     """
     from imageserve.models import Manuscript
-    for name in os.listdir(IMG_DIR):
+
+    directories = os.listdir(IMG_DIR)
+    known_manuscripts = Manuscript.objects.values_list('directory', flat=True)
+    unknown_manuscripts = set(known_manuscripts).symmetric_difference(set(directories))
+    for name in unknown_manuscripts:
         if os.path.isdir(os.path.join(IMG_DIR, name)):
-            if not Manuscript.objects.filter(directory=name):
-                m = Manuscript(directory=name)
-                m.clean()
-                m.save()
+            m = Manuscript(directory=name)
+            m.clean()
+            m.save()
