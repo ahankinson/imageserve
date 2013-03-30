@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.conf import settings
 from django import forms
 from guardian.admin import GuardedModelAdmin
 from imageserve.helpers import register_defs, register_manuscripts
@@ -45,5 +46,8 @@ admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
 admin.site.register(AttDisplaySetting)
 admin.site.register(RelDisplaySetting)
 
-register_defs()
-register_manuscripts()
+if settings.UPDATE_DEFS:
+    register_defs()
+
+if settings.UPDATE_MANUSCRIPTS:
+    register_manuscripts()

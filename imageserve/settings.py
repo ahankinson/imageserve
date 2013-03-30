@@ -11,6 +11,11 @@ TEMPLATE_DEBUG = DEBUG
 
 NO_DATA_MSG = "Data not entered"
 
+# set to true to update the defs and manuscripts.
+# Switched off by default for performance reasons
+UPDATE_MANUSCRIPTS = False
+UPDATE_DEFS = False
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
