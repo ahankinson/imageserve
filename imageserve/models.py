@@ -186,6 +186,9 @@ class Manuscript(models.Model):
                                        editable=False,
                                        null=True)
 
+    class Meta:
+        ordering = ['directory']
+
     def num_witnesses(self):
         """
         This method is designed for the manuscript index view, which uses
