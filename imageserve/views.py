@@ -1,7 +1,7 @@
 import os
 import conf
 from json import dumps
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from urllib import quote_plus
@@ -79,29 +79,48 @@ def metadata(request):
 
 def manuscript(request, ms_id):
     """The view for displaying a specific manuscript."""
+    if request.user.is_anonymous():
+        u = User.objects.get(pk=-1)  # select the "AnonymousUser" object
+    else:
+        u = request.user
+
+    # We break the response down into a couple steps here.
+    # First, check the number of manuscripts groups they have permissions to. This is just to
+    # be able to exit with a 404 if they're trying to access a manuscript in a group that doesn't exist.
+
+    # Then, we check against the manuscripts themselves. This allows us to catch the user and redirect them
+    # to a log in page if they need to log in to see the MSS.
+    manuscript_groups = get_objects_for_user(u, 'imageserve.view_manuscript_group')
+    manuscripts = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups).distinct()
+    if not manuscripts.exists():
+        raise Http404
+
+    has_permission = manuscripts.filter(id=ms_id)
+
+    if manuscripts and not has_permission.exists():
+        return redirect('/login/?next={0}'.format(request.path))
+
+    m = manuscripts[0]
     curr_wit = request.GET.get('curr_wit')
     try:
         curr_wit = int(curr_wit)
     except:
         curr_wit = 0
-    m = Manuscript.objects.get(id=ms_id)
-    groups = m.manuscriptgroup_set.all()
-    for group in groups:
-        if group.users.all():
-            if request.user not in group.users.all():
-                return redirect('/login/?next=%s' % request.path)
+
     pth = os.path.join(conf.IMG_DIR, m.directory)
     # witnesses = None
     titles = None
     ismi_data = False
+
     if m.ismi_id is not None:
         ismi_data = True
         if m.witnesses:
             if not curr_wit in range(len(m.witnesses)):
                 curr_wit = 0
             titles = enumerate(m.witness_titles.split(','))
+
     data = {
-        'title': 'Imageserve - Viewing {0}'.format(m.directory),
+        'title': 'Viewing {0}'.format(m.directory),
         'witnesses': bool(m.witnesses),
         'curr_wit': curr_wit,
         'image_path': pth,
