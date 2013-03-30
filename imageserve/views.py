@@ -100,7 +100,7 @@ def manuscript(request, ms_id):
     if manuscripts and not has_permission.exists():
         return redirect('/login/?next={0}'.format(request.path))
 
-    m = manuscripts[0]
+    m = has_permission[0]
     curr_wit = request.GET.get('curr_wit')
     try:
         curr_wit = int(curr_wit)
