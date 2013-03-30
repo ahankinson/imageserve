@@ -2,6 +2,7 @@ import os
 import conf
 from json import dumps
 from django.http import HttpResponse
+from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from urllib import quote_plus
 from django.contrib.auth.decorators import login_required
@@ -10,25 +11,24 @@ from django.contrib.auth.views import logout
 from django.forms import ValidationError
 from imageserve import img_server
 from imageserve.helpers import get_keyval
-from imageserve.models import Manuscript, AttDisplaySetting, RelDisplaySetting
+from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
 from imageserve.settings import NO_DATA_MSG
+from guardian.shortcuts import get_objects_for_user, get_perms
 
 
 def main(request):
     """The main view, where users can browse available manuscripts."""
-    def is_authenticated(m):
-        groups = m.manuscriptgroup_set.all()
-        if groups:
-            for group in groups:
-                if group.public:
-                    return True
-                if group.users.all():
-                    if request.user in group.users.all():
-                        return True
-        return False
+    if request.user.is_anonymous():
+        u = User.objects.get(pk=-1)  # select the "AnonymousUser" object
+    else:
+        u = request.user
+
+    manuscript_groups = get_objects_for_user(u, 'imageserve.view_manuscript_group')
+    manuscripts = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups).distinct()
+
     data = {
-        'manuscripts': filter(is_authenticated, Manuscript.objects.all()),
-        'title': 'Imageserve - Available Manuscripts',
+        'manuscripts': manuscripts,
+        'title': 'Available Manuscripts',
         'path': quote_plus(request.get_full_path()),
     }
     return render(request, "templates/index.html", data)

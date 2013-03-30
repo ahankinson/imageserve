@@ -288,6 +288,11 @@ class ManuscriptGroup(models.Model):
     users = models.ManyToManyField(User, blank=True)
     public = models.BooleanField(default=False)
 
+    class Meta:
+        permissions = (
+            ('view_manuscript_group', 'Can View Manuscripts in Group'),
+        )
+
     def __unicode__(self):
         return unicode(self.name)
 
