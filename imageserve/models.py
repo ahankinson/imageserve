@@ -280,8 +280,6 @@ class ManuscriptGroup(models.Model):
     """
     name = models.CharField(max_length=200, blank=True)
     manuscripts = models.ManyToManyField(Manuscript)
-    users = models.ManyToManyField(User, blank=True)
-    public = models.BooleanField(default=False)
 
     class Meta:
         permissions = (
