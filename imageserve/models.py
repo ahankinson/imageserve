@@ -1,17 +1,12 @@
 import re
 import os
-# from os import listdir
-# from os.path import isdir, join
 from django.db import models
-from django.forms import ModelForm
-from django.contrib import admin
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from conf import IMG_DIR
 from imageserve.helpers import get_by_ismi_id, get_keyval
 from imageserve.forms import IntegerListField, PageRangeListField
 from imageserve.forms import PageRange, PageRangeList
-from imageserve.forms import PageRangeListFormField
 from imageserve.settings import NO_DATA_MSG
 from south.modelsinspector import add_introspection_rules
 
@@ -295,33 +290,3 @@ class ManuscriptGroup(models.Model):
 
     def __unicode__(self):
         return unicode(self.name)
-
-
-class ManuscriptAdminForm(ModelForm):
-    '''
-    Custom admin form to take care of dynamically generating
-    the form widget corresponding to the page numbers of the
-    witnesses in a codex.
-    '''
-    class Meta:
-        model = Manuscript
-
-    def __init__(self, *args, **kwargs):
-        super(ManuscriptAdminForm, self).__init__(*args, **kwargs)
-        instance = kwargs.get('instance')
-        if instance:
-            if instance.witnesses:
-                self.fields['witness_pages'] = PageRangeListFormField(instance.witnesses)
-
-
-class ManuscriptAdmin(admin.ModelAdmin):
-    form = ManuscriptAdminForm
-    readonly_fields = ('num_files',)
-
-    def get_form(self, request, obj=None, **kwargs):
-        self.exclude = ('witness_pages', 'num_files')
-        if obj:
-            self.exclude = ('witness_pages',)
-            if obj.witnesses:
-                self.exclude = ()
-        return super(ManuscriptAdmin, self).get_form(request, obj, **kwargs)

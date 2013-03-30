@@ -1,5 +1,6 @@
 from django import forms
 from django.db import models
+# from imageserve.models import Manuscript
 from imageserve.helpers import get_by_ismi_id
 from south.modelsinspector import add_introspection_rules
 
