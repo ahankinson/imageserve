@@ -39,10 +39,11 @@ class IntegerListField(models.Field):
         return 'char(500)'
 
     def to_python(self, value):
-        value = value.strip()
         if value:
             if isinstance(value, (list, tuple)):
                 return list(value)
+
+            value = value.strip()
             return map(int, value.split(','))
         return []
 
@@ -62,12 +63,13 @@ class PageRangeListField(models.Field):
         return 'char(500)'
 
     def to_python(self, value):
-        value = value.strip()
         if value:
             if isinstance(value, PageRangeList):
                 return value
             if isinstance(value, (list, tuple)):
                 return PageRangeList(value)
+
+            value = value.strip()
             pages = [tuple(r.split('-')) for r in value.split(',')]
             ret_list = []
             for first, last in pages:
