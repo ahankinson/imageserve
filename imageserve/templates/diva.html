@@ -6,8 +6,7 @@
 
 {% block header %}
     <link rel="stylesheet" href="{{ STATIC_URL }}css/diva.min.css" type="text/css" />
-
-    <script src="{{ STATIC_URL }}js/diva.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/diva.min.js"></script>
 
     <script type="text/javascript">
     {% if witnesses %}
@@ -31,6 +30,7 @@
         var pageForWit = apiFunc("/page_for_wit");
         var witForPage = apiFunc("/wit_for_page");
         var idForWit = apiFunc("/id_for_wit");
+
         var updateWitness = function (nextWit) {
             currWit = nextWit;
             $("#myModalBody").html("Loading Metadata...");
@@ -71,8 +71,8 @@
             enableGotoPage: true,
             fixedHeightGrid: false,
             contained: true,
-            iipServerURL: "http://localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
-            divaserveURL: "http://localhost:8000/divaserve",
+            iipServerURL: "http://images.rasi.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
+            divaserveURL: "http://images.rasi.mcgill.ca/divaserve",
             imageDir: "{{ms_name}}",
             {% if witnesses %}
                 onScroll: function (newPageIndex) {

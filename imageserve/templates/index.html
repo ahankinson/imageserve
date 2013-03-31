@@ -3,43 +3,47 @@
 {% block wrap %}
 <div class="row-fluid">
     <div class="span12">
-<table class="table table-striped table-bordered table-hover table-condensed">
-    <tr>
-        <th>Codex</th>
-        <th>#</th>
-        <th>Title</th>
-        <th>Author</th>
-    </tr>
-{% for m in manuscripts %}
-    {% if m.num_witnesses > 1 %}
-        <tr>
-            <td rowspan="{{m.num_witnesses}}">
-                <a href="/codex/{{m.id}}">{{ m.directory }}</a>
-            </td>
-            <td rowspan="{{m.num_witnesses}}">{{ m.num_files }}</td>
-        </tr>
-        {% for i, title, author in m.witness_infos %}
-            <tr>
-                <td>
-                    <a href="/codex/{{m.id}}?curr_wit={{i}}">
-                        {{ title }}
-                    </a>
-                </td>
-                <td>{{ author }}</td>
-            </tr>
-        {% endfor %}
-    {% else %}
-        <tr>
-            <td rowspan="2"><a href="/codex/{{m.id}}">{{ m.directory }}</a></td>
-            <td rowspan="2">{{ m.num_files }}</td>
-        </tr>
-        <tr>
-            <td>No titles identified</td>
-            <td>No authors identified</td>
-        </tr>
-    {% endif %}
-{% endfor %}
-</table>
-</div>
+        <table class="table table-striped table-bordered table-hover table-condensed">
+            <thead>
+                <tr>
+                    <th>Codex</th>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for m in manuscripts %}
+                {% if m.num_witnesses > 1 %}
+                    <tr>
+                        <td rowspan="{{m.num_witnesses}}">
+                            <a href="/codex/{{m.id}}">{{ m.directory }}</a>
+                        </td>
+                        <td rowspan="{{m.num_witnesses}}">{{ m.num_files }}</td>
+                    </tr>
+                    {% for i, title, author in m.witness_infos %}
+                        <tr>
+                            <td>
+                                <a href="/codex/{{m.id}}?curr_wit={{i}}">
+                                    {{ title }}
+                                </a>
+                            </td>
+                            <td>{{ author }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td rowspan="2"><a href="/codex/{{m.id}}">{{ m.directory }}</a></td>
+                        <td rowspan="2">{{ m.num_files }}</td>
+                    </tr>
+                    <tr>
+                        <td>No titles identified</td>
+                        <td>No authors identified</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
