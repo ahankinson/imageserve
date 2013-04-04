@@ -16,10 +16,14 @@ class Command(BaseCommand):
             print 'getting ISMI ID for', directory, '...',
             ms = Manuscript.objects.filter(directory=directory)
             if ms:
-                ms = Manuscript.objects.get(directory=directory)
-                ms.ismi_id = ismi_id
-                ms.clean()
-                ms.save()
-                print 'done.'
+                try:
+                    ms = Manuscript.objects.get(directory=directory)
+                    ms.ismi_id = ismi_id
+                    ms.clean()
+                    ms.save()
+                    print 'done.'
+                except:
+                    print directory, 'failed.'
+                    continue
             else:
                 print directory, 'not found.'
