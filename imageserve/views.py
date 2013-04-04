@@ -41,18 +41,24 @@ def diva(request):
     return HttpResponse(dumps(js), content_type="application/json")
 
 
-def metadata(request):
+def title_author(request):
     """
-    This view is intended to handle AJAX requests for metadata from the
-    manuscript viewer page.
+    This view handles AJAX requests to asynchronously update the
+    Title and Author information on the viewer page.
     """
     w = request.GET['wit_id']
+    ms_title = get_keyval(RelDisplaySetting.objects.get(name='is_exemplar_of'), w)[1]
+    ms_author = get_keyval(RelDisplaySetting.objects.get(name='was_created_by'), w)[1]
+    data = {'title': ms_title, 'author': ms_author}
+    return HttpResponse(dumps(data), mimetype="text/json")
 
-    table_template = Template('''<table class="table table-bordered">
-      {% for key, val in md %}
-        <tr><td>{{key}}</td><td>{{val}}</td></tr>
-      {% endfor %}
-    </table>''')
+
+def metadata(request):
+    """
+    This view serves the metadata window.
+    """
+    w = int(request.GET['wit_id'])
+    ms_name = request.GET['ms_name']
 
     def adder(clss, l):
         for a in clss.objects.all():
@@ -64,17 +70,13 @@ def metadata(request):
                     _, val = kv
                     if val != NO_DATA_MSG:
                         l.append(kv)
+    
     md = []
     adder(AttDisplaySetting, md)
     adder(RelDisplaySetting, md)
-    table_context = Context({'md': md})
-    table = table_template.render(table_context)
-
-    ms_title = get_keyval(RelDisplaySetting.objects.get(name='is_exemplar_of'), w)[1]
-    ms_author = get_keyval(RelDisplaySetting.objects.get(name='was_created_by'), w)[1]
-
-    data = {'table': table, 'title': ms_title, 'author': ms_author}
-    return HttpResponse(dumps(data), mimetype="text/json")
+    
+    data = {'ms_name': ms_name, 'md': md}
+    return render(request, "templates/metadata.html", data)
 
 
 def manuscript(request, ms_id):

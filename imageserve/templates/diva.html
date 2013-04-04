@@ -33,30 +33,30 @@
 
         var updateWitness = function (nextWit) {
             currWit = nextWit;
-            $("#myModalBody").html("Loading Metadata...");
+            // $("#myModalBody").html("Loading Metadata...");
             $("#witness-title").html("Loading Witness Title...");
             $("#witness-author").html("Loading Witness Author...");
             if (nextWit != -1) {
                 $("#title-select").val(nextWit);
                 idForWit({'ms_id': {{ms_id}}, 'wit': nextWit},
-                        function (witId) {
-                            $.ajax({
-                                url: "/metadata",
-                                context: document.body,
-                                data: {'wit_id': witId},
-                                beforeSend: function (xhr) {
-                                    xhr.overrideMimeType("text/json");
-                                },
-                            }).done(function (data, textStatus, jqXHR) {
-                                $("#myModalBody").html(data['table']);
-                                $("#witness-title").html(data['title']);
-                                $("#witness-author").html(data['author']);
-                            });
-                         });
+                    function (witId) {
+                        $.ajax({
+                            url: '/title_author',
+                            context: document.body,
+                            data: {'wit_id': witId},
+                            beforeSend: function (xhr) {
+                                xhr.overrideMimeType("text/json");
+                            },
+                        }).done(function (data, textStatus, jqXHR) {
+                            $("#witness-title").html(data['title']);
+                            $("#witness-author").html(data['author']);
+                        });
+                    }
+                )
             } else {
-                $("#myModalBody").html(
-                    "No witness has been identified for this page."
-                );
+                // $("#myModalBody").html(
+                //     "No witness has been identified for this page."
+                // );
                 $("#witness-title").html(
                     "No witness has been identified for this page."
                 );
@@ -71,8 +71,8 @@
             enableGotoPage: true,
             fixedHeightGrid: false,
             contained: true,
-            iipServerURL: "http://images.rasi.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
-            divaserveURL: "http://images.rasi.mcgill.ca/divaserve",
+            iipServerURL: "http://localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
+            divaserveURL: "http://localhost:8000/divaserve",
             imageDir: "{{ms_name}}",
             {% if witnesses %}
                 onScroll: function (newPageIndex) {
@@ -203,6 +203,15 @@
                 });
                 $("#edit-pages").click(toggleEditMode);
             });
+            $("#md-button").click( function () {
+                    idForWit({'ms_id': {{ms_id}}, 'wit': currWit},
+                        function (witId) {
+                            window.open('/metadata?wit_id=' + String(witId)
+                                        + '&ms_name={{ms_name}}', "_blank")
+                        }
+                    );
+                }
+            );
         {% endif %}
     });
     </script>
@@ -229,8 +238,7 @@
                             <option value={{i}}>{{title}}</option>
                             {% endfor %}
                         </select>
-                        <a href="#myModal" role="button" class="btn" 
-                         data-toggle="modal" id="md-button">
+                        <a href="#" role="button" class="btn" id="md-button">
                             Show Witness Info
                         </a>
                     </dd>
@@ -258,16 +266,5 @@
 {% endblock %}
 
 {% block modal %}
-<!-- Modal -->
-<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog"
-     aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3 id="myModalLabel">Metadata for {{ms_name}}</h3>
-  </div>
-  <div id="myModalBody" class="modal-body"></div>
-  <div class="modal-footer">
-    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>
-  </div>
-</div>
+
 {% endblock %}
