@@ -20,7 +20,7 @@ class Command(BaseCommand):
         for directory in STABI_CODICES:
             matches = [e for e in ents if e.get('ov') == directory]
             if matches:
-                zipper.append((directory, matches[0]['id']))
+                pairs.append((directory, matches[0]['id']))
         for directory, ismi_id in pairs:
             print 'getting ISMI ID for', directory, '...',
             ms = Manuscript.objects.filter(directory=directory)
