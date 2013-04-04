@@ -256,6 +256,14 @@ class Manuscript(models.Model):
             self.witness_titles = ",".join(map(get_title, wits))
             self.witness_authors = ",".join(map(get_author, wits))
         if self.witnesses and self.witness_pages:
+            wits = self.witnesses
+            get_title = lambda w: get_keyval(RelDisplaySetting.objects.get(
+                                             name='is_exemplar_of'),
+                                             w)[1]
+            get_author = lambda w: get_keyval(RelDisplaySetting.objects.get(
+                                              name='was_created_by'), w)[1]
+            self.witness_titles = ",".join(map(get_title, wits))
+            self.witness_authors = ",".join(map(get_author, wits))
             (self.witnesses,
              self.witness_pages,
              witness_titles,
