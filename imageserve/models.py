@@ -240,10 +240,9 @@ class Manuscript(models.Model):
                     else:
                         folios.append('')
                 pages = PageRangeList(map(get_pages, folios))
-                sorted_wits = sorted(zip(wits, pages),
-                                     key=lambda t: t[1].first)
-                self.witnesses = [w for w, _ in sorted_wits]
-                self.witness_pages = [p for _, p in sorted_wits]
+                self.witnesses, self.witness_pages = \
+                    zip(*sorted(zip(wits, pages),
+                                    key=lambda t: t[1].first))
             else:
                 self.witnesses = wits
                 self.witness_pages = \
@@ -252,29 +251,22 @@ class Manuscript(models.Model):
                                              name='is_exemplar_of'),
                                              w)[1]
             get_author = lambda w: get_keyval(RelDisplaySetting.objects.get(
-                                              name='was_created_by'), w)[1]
+                                              name='was_created_by'),
+                                              w)[1]
             self.witness_titles = ",".join(map(get_title, wits))
             self.witness_authors = ",".join(map(get_author, wits))
         if self.witnesses and self.witness_pages:
-            wits = self.witnesses
+            self.witnesses, self.witness_pages = \
+                zip(*sorted(zip(self.witnesses, self.witness_pages),
+                            key=lambda t: t[1].first))
             get_title = lambda w: get_keyval(RelDisplaySetting.objects.get(
                                              name='is_exemplar_of'),
                                              w)[1]
             get_author = lambda w: get_keyval(RelDisplaySetting.objects.get(
-                                              name='was_created_by'), w)[1]
-            self.witness_titles = ",".join(map(get_title, wits))
-            self.witness_authors = ",".join(map(get_author, wits))
-            (self.witnesses,
-             self.witness_pages,
-             witness_titles,
-             witness_authors) = zip(*sorted(
-                                    zip(self.witnesses,
-                                        self.witness_pages,
-                                        self.witness_titles.split(','),
-                                        self.witness_authors.split(',')),
-                                    key=lambda t: t[1].first))
-            self.witness_titles = unicode(",".join(witness_titles))
-            self.witness_authors = unicode(",".join(witness_authors))
+                                              name='was_created_by'),
+                                              w)[1]
+            self.witness_titles = ",".join(map(get_title, self.witnesses))
+            self.witness_authors = ",".join(map(get_author, self.witnesses))
         return super(Manuscript, self).clean(*args, **kwargs)
 
     def __unicode__(self):
