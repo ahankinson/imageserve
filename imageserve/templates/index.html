@@ -1,5 +1,21 @@
 {% extends 'main.html' %}
 
+{% block navbar %}
+{% if user.is_authenticated %}
+    <li>
+    {% if show_all %}
+        <a href="{{request.get_full_path}}?show_all=0">
+            Show Stabi Codices
+        </a>
+    {% else %}
+        <a href="{{request.get_full_path}}?show_all=1">
+            Show All Codices
+        </a>
+    {% endif %}
+    </li>
+{% endif %}
+{% endblock %}
+
 {% block wrap %}
 <div class="row-fluid">
     <div class="span12">

@@ -20,16 +20,28 @@ def main(request):
     """The main view, where users can browse available manuscripts."""
     if request.user.is_anonymous():
         u = User.objects.get(pk=-1)  # select the "AnonymousUser" object
+        show_all = False
     else:
         u = request.user
-
+        show_all = request.GET.get('show_all')
+        if show_all is not None:
+            show_all = bool(int(show_all))
+        else:
+            show_all = False
+    
     manuscript_groups = get_objects_for_user(u, 'imageserve.view_manuscript_group')
-    manuscripts = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups).distinct()
-
+    manuscripts = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups)
+    if not show_all:
+        # this assumes the existence of a manuscriptgroup called "Stabi Codices"...
+        stabi = ManuscriptGroup.objects.filter(name="Stabi Codices")
+        manuscripts = manuscripts.filter(manuscriptgroup__in=stabi)
+    manuscripts = manuscripts.distinct()
+    
     data = {
         'manuscripts': manuscripts,
         'title': 'Available Manuscripts',
         'path': quote_plus(request.get_full_path()),
+        'show_all': show_all
     }
     return render(request, "templates/index.html", data)
 
