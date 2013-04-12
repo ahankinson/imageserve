@@ -6,29 +6,41 @@ from imageserve.conf import IMG_DIR
 from django.core.cache import cache
 
 
-def get_name(ent):
+def get_name(ent, **kwargs):
     """
     Given a dictionary representing an ISMI entity, try to find the
     most human-legible name for it possible -- failing that, return
     its ISMI ID.
     """
-    if 'ov' in ent:
-        if ent['ov']:
-            return ent['ov']
-    if 'oc' in ent:
-        if 'REFERENCE' == ent['oc']:
-            if 'atts' in ent:
-                for att in ent['atts']:
-                    if 'name' in att:
-                        if 'id' == att['name']:
-                            if 'ov' in att:
-                                if att['ov']:
-                                    return att['ov']
-                        if 'endnote-content' == att['name']:
-                            if 'ov' in att:
-                                if att['ov']:
-                                    return att['ov']
-    return u"ISMI entity "+unicode(ent['id'])
+    show_id = False
+    if 'show_id' in kwargs:
+        show_id = kwargs.pop('show_id')
+    ret = None
+    while ret is None:
+        if 'ov' in ent:
+            if ent['ov']:
+                ret = ent['ov']
+                break
+        if 'oc' in ent:
+            if 'REFERENCE' == ent['oc']:
+                if 'atts' in ent:
+                    for att in ent['atts']:
+                        if 'name' in att:
+                            if 'id' == att['name']:
+                                if 'ov' in att:
+                                    if att['ov']:
+                                        ret = att['ov']
+                                        break
+                            if 'endnote-content' == att['name']:
+                                if 'ov' in att:
+                                    if att['ov']:
+                                        ret = att['ov']
+                                        break
+        if ret is None:
+            return u"ISMI entity {0}".format(ent['id'])
+    if show_id:
+        return u"{0} (ISMI ID {1})".format(ret, ent['id'])
+    return unicode(ret)
 
 def get_keyvals(setting, iden):
     """

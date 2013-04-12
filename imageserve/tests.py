@@ -22,6 +22,6 @@ class DisplaySettingTest(TestCase):
             for att in ent['atts']:
                 try:
                     s = AttDisplaySetting.objects.get(name=att['name'])
-                    self.assertEqual(get_keyval(s,iden)[1], att['ov'])
+                    self.assertEqual(get_keyvals(s,iden)[1][0], att['ov'])
                 except:
                     continue
