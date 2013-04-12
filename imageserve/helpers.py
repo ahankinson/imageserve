@@ -24,7 +24,7 @@ def get_name(ent):
                             if 'ov' in att:
                                 if att['ov']:
                                     return att['ov']
-    return ent['id']
+    return u"ISMI entity "+unicode(ent['id'])
 
 def get_keyvals(setting, iden):
     """
