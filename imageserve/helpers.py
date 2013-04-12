@@ -24,6 +24,10 @@ def get_name(ent):
                             if 'ov' in att:
                                 if att['ov']:
                                     return att['ov']
+                        if 'endnote-content' == att['name']:
+                            if 'ov' in att:
+                                if att['ov']:
+                                    return att['ov']
     return u"ISMI entity "+unicode(ent['id'])
 
 def get_keyvals(setting, iden):
