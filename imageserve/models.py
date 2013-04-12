@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from conf import IMG_DIR
-from imageserve.helpers import get_by_ismi_id, get_keyval, get_name
+from imageserve.helpers import get_by_ismi_id, get_keyvals, get_name
 from imageserve.forms import IntegerListField, PageRangeListField
 from imageserve.forms import PageRange, PageRangeList
 from imageserve.settings import NO_DATA_MSG
@@ -139,7 +139,7 @@ class RelDisplaySetting(models.Model):
             tar_match = [r for r in curr_ent['tar_rels'] if r['name'] == self.on_ent]
             return get_by_ismi_id(tar_match[0]['src_id'])
 
-    def get_val(self, ID):
+    def get_vals(self, ID):
         """
         Given the id of a witness, return the values of this relation
         as they would appear in the metadata view for the witness in question.
@@ -181,7 +181,7 @@ class Manuscript(models.Model):
     witness_authors = models.CharField(max_length=2000,
                                        editable=False,
                                        null=True)
-    has_folio_nums = models.BooleanField(default=True)
+    # has_folio_nums = models.BooleanField(default=True)
     
     class Meta:
         ordering = ['directory']

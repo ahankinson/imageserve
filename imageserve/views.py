@@ -10,7 +10,7 @@ from django.template import Template, Context
 from django.contrib.auth.views import logout
 from django.forms import ValidationError
 from imageserve import img_server
-from imageserve.helpers import get_keyval
+from imageserve.helpers import get_keyvals
 from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
 from imageserve.settings import NO_DATA_MSG
 from guardian.shortcuts import get_objects_for_user, get_perms

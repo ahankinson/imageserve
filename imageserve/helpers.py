@@ -34,7 +34,7 @@ def get_keyvals(setting, iden):
     try:
         vals = setting.get_vals(iden)
     except:
-        val = NO_DATA_MSG
+        vals = NO_DATA_MSG
     return (key, vals)
 
 
