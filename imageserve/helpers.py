@@ -6,18 +6,36 @@ from imageserve.conf import IMG_DIR
 from django.core.cache import cache
 
 
-def get_keyval(setting, iden):
+def get_name(ent):
+    """
+    Given a dictionary representing an ISMI entity, try to find the
+    most human-legible name for it possible -- failing that, return
+    its ISMI ID.
+    """
+    if 'ov' in ent:
+        return ent['ov']
+    if 'oc' in ent:
+        if 'REFERENCE' == ent['oc']:
+            if 'atts' in ent:
+                for att in ent['atts']:
+                    if 'name' in att:
+                        if 'id' == att['name']:
+                            if 'ov' in att:
+                                return att['ov']
+    return ent['id']
+
+def get_keyvals(setting, iden):
     """
     Given an AttSetting or a RelSetting object and an ISMI ID for a
-    WITNESS, return the name and value of that att or rel for the
+    WITNESS, return the name and values of that att or rel for the
     given witness.
     """
     key = setting.display_name
     try:
-        val = setting.get_val(iden)
+        vals = setting.get_vals(iden)
     except:
         val = NO_DATA_MSG
-    return (key, val)
+    return (key, vals)
 
 
 def get_by_ismi_id(iden):

@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from conf import IMG_DIR
-from imageserve.helpers import get_by_ismi_id, get_keyval
+from imageserve.helpers import get_by_ismi_id, get_keyval, get_name
 from imageserve.forms import IntegerListField, PageRangeListField
 from imageserve.forms import PageRange, PageRangeList
 from imageserve.settings import NO_DATA_MSG
@@ -80,7 +80,7 @@ class AttDisplaySetting(models.Model):
             tar_match = [r for r in curr_ent['tar_rels'] if r['name'] == self.on_ent]
             return get_by_ismi_id(tar_match[0]['src_id'])
 
-    def get_val(self, ID):
+    def get_vals(self, ID):
         """
         Given the id of a (codex or witness, not yet decided),
         return the value of this attribute as it would appear
@@ -91,8 +91,8 @@ class AttDisplaySetting(models.Model):
         if match:
             val = match[0].get('ov')
             if val is not None:
-                return val
-        return NO_DATA_MSG
+                return [val]
+        return [NO_DATA_MSG]
 
     def __unicode__(self):
         return unicode(self.name)
@@ -141,19 +141,20 @@ class RelDisplaySetting(models.Model):
 
     def get_val(self, ID):
         """
-        Given the id of a (codex or witness, not yet decided),
-        return the value of this relation as it would appear
-        in the metadata view for the (codex or witness) in question.
+        Given the id of a witness, return the values of this relation
+        as they would appear in the metadata view for the witness in question.
         """
         ent = self.ent_getter(ID)
+        matches = [NO_DATA_MSG]
         src_match = [r for r in ent['src_rels'] if r['name'] == self.name]
         if src_match:
-            return get_by_ismi_id(src_match[0]['tar_id'])['ov']
-        else:
-            tar_match = [r for r in ent['tar_rels'] if r['name'] == self.name]
-            if tar_match:
-                return get_by_ismi_id(tar_match[0]['src_id'])['ov']
-        return NO_DATA_MSG
+            src_match = [get_by_ismi_id(r['tar_id']) for r in src_match]
+            matches = [get_name(e) for e in src_match]
+        tar_match = [r for r in ent['tar_rels'] if r['name'] == self.name]
+        if tar_match:
+            tar_match = [get_by_ismi_id(r['src_id']) for r in tar_match]
+            matches += [get_name(e) for e in tar_match]
+        return matches
 
     def __unicode__(self):
         return unicode(self.name)
@@ -180,7 +181,8 @@ class Manuscript(models.Model):
     witness_authors = models.CharField(max_length=2000,
                                        editable=False,
                                        null=True)
-
+    has_folio_nums = models.BooleanField(default=True)
+    
     class Meta:
         ordering = ['directory']
 
@@ -247,24 +249,24 @@ class Manuscript(models.Model):
                 self.witnesses = wits
                 self.witness_pages = \
                     PageRangeList([PageRange(1, self.num_files)])
-            get_title = lambda w: get_keyval(RelDisplaySetting.objects.get(
+            get_title = lambda w: get_keyvals(RelDisplaySetting.objects.get(
                                              name='is_exemplar_of'),
-                                             w)[1]
-            get_author = lambda w: get_keyval(RelDisplaySetting.objects.get(
+                                             w)[1][0]
+            get_author = lambda w: get_keyvals(RelDisplaySetting.objects.get(
                                               name='was_created_by'),
-                                              w)[1]
+                                              w)[1][0]
             self.witness_titles = ",".join(map(get_title, wits))
             self.witness_authors = ",".join(map(get_author, wits))
         if self.witnesses and self.witness_pages:
             self.witnesses, self.witness_pages = \
                 zip(*sorted(zip(self.witnesses, self.witness_pages),
                             key=lambda t: t[1].first))
-            get_title = lambda w: get_keyval(RelDisplaySetting.objects.get(
+            get_title = lambda w: get_keyvals(RelDisplaySetting.objects.get(
                                              name='is_exemplar_of'),
-                                             w)[1]
-            get_author = lambda w: get_keyval(RelDisplaySetting.objects.get(
+                                             w)[1][0]
+            get_author = lambda w: get_keyvals(RelDisplaySetting.objects.get(
                                               name='was_created_by'),
-                                              w)[1]
+                                              w)[1][0]
             self.witness_titles = ",".join(map(get_title, self.witnesses))
             self.witness_authors = ",".join(map(get_author, self.witnesses))
         return super(Manuscript, self).clean(*args, **kwargs)

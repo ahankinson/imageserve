@@ -59,8 +59,8 @@ def title_author(request):
     Title and Author information on the viewer page.
     """
     w = request.GET['wit_id']
-    ms_title = get_keyval(RelDisplaySetting.objects.get(name='is_exemplar_of'), w)[1]
-    ms_author = get_keyval(RelDisplaySetting.objects.get(name='was_created_by'), w)[1]
+    ms_title = get_keyvals(RelDisplaySetting.objects.get(name='is_exemplar_of'), w)[1][0]
+    ms_author = get_keyvals(RelDisplaySetting.objects.get(name='was_created_by'), w)[1][0]
     data = {'title': ms_title, 'author': ms_author}
     return HttpResponse(dumps(data), mimetype="text/json")
 
@@ -75,13 +75,16 @@ def metadata(request):
     def adder(clss, l):
         for a in clss.objects.all():
             if a.show != clss.NEVER_SHOW:
-                kv = get_keyval(a, w)
+                k, vals = get_keyvals(a, w)
                 if a.show == clss.ALWAYS_SHOW:
-                    l.append(kv)
+                    for val in vals:
+                        l.append((k, val))
                 else:
-                    _, val = kv
-                    if val != NO_DATA_MSG:
-                        l.append(kv)
+                    if len(vals) == 1:
+                        if val[0] == NO_DATA_MSG:
+                            continue
+                    for val in vals:
+                        l.append((k, val))
     
     md = []
     adder(AttDisplaySetting, md)
