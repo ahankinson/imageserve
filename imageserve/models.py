@@ -145,15 +145,17 @@ class RelDisplaySetting(models.Model):
         as they would appear in the metadata view for the witness in question.
         """
         ent = self.ent_getter(ID)
-        matches = [NO_DATA_MSG]
+        matches = []
         src_match = [r for r in ent['src_rels'] if r['name'] == self.name]
         if src_match:
             src_match = [get_by_ismi_id(r['tar_id']) for r in src_match]
-            matches = [get_name(e) for e in src_match]
+            matches += [get_name(e) for e in src_match]
         tar_match = [r for r in ent['tar_rels'] if r['name'] == self.name]
         if tar_match:
             tar_match = [get_by_ismi_id(r['src_id']) for r in tar_match]
             matches += [get_name(e) for e in tar_match]
+        if not matches:
+            matches = [NO_DATA_MSG]
         return matches
 
     def __unicode__(self):
