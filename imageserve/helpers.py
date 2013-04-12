@@ -13,7 +13,8 @@ def get_name(ent):
     its ISMI ID.
     """
     if 'ov' in ent:
-        return ent['ov']
+        if ent['ov']:
+            return ent['ov']
     if 'oc' in ent:
         if 'REFERENCE' == ent['oc']:
             if 'atts' in ent:
@@ -21,7 +22,8 @@ def get_name(ent):
                     if 'name' in att:
                         if 'id' == att['name']:
                             if 'ov' in att:
-                                return att['ov']
+                                if att['ov']:
+                                    return att['ov']
     return ent['id']
 
 def get_keyvals(setting, iden):
