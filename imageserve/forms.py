@@ -32,21 +32,21 @@ class PageRangeList(object):
         return self._page_ranges[key]
 
 
-def folios(**kwargs):
-    """
-    Generator for folio numbers. Optional keyword argument `start`
-    lets you specify a different start point, non-inclusive. Must be a
-    valid folio number, or else stuff will break.
-    """
-    suffixes = {True: 'a', False: 'b'}
-    unsuff = {v:k for k,v in suffixes.items()}
-    start = kwargs.get('start', '0b')
-    for k, suff in re.findall(r'(\d+)(a|b)', start): pass
-    k = int(k)
-    while True:
-        if not unsuff[suff]: k += 1
-        suff = suffixes[not unsuff[suff]]
-        yield str(k)+suff
+#def folios(**kwargs):
+#    """
+#    Generator for folio numbers. Optional keyword argument `start`
+#    lets you specify a different start point, non-inclusive. Must be a
+#    valid folio number, or else stuff will break.
+#    """
+#    suffixes = {True: 'a', False: 'b'}
+#    unsuff = {v:k for k,v in suffixes.items()}
+#    start = kwargs.get('start', '0b')
+#    for k, suff in re.findall(r'(\d+)(a|b)', start): pass
+#    k = int(k)
+#    while True:
+#        if not unsuff[suff]: k += 1
+#        suff = suffixes[not unsuff[suff]]
+#        yield str(k)+suff
 
 
 class FolioPages(object):

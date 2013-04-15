@@ -1,7 +1,7 @@
 import os
 from urllib import urlopen
 from json import loads
-from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG
+from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG, CACHE_ENABLED
 from imageserve.conf import IMG_DIR
 from django.core.cache import cache
 
@@ -26,6 +26,7 @@ def get_name(ent, **kwargs):
                 if 'atts' in ent:
                     for att in ent['atts']:
                         if 'name' in att:
+                            break_after = False
                             if 'id' == att['name']:
                                 if 'ov' in att:
                                     if att['ov']:
@@ -35,7 +36,15 @@ def get_name(ent, **kwargs):
                                 if 'ov' in att:
                                     if att['ov']:
                                         ret = att['ov']
+                                        break_after = True
+                            if break_after:
+                                for attr in ent['atts']:
+                                    if 'additional_information' == attr['name']:
+                                        if 'ov' in attr:
+                                            if attr['ov']:
+                                                ret += " {0}".format(attr['ov'])
                                         break
+                                break
         if ret is None:
             return u"ISMI entity {0}".format(ent['id'])
     if show_id:
@@ -62,7 +71,9 @@ def get_by_ismi_id(iden):
     all the relevant info from the ISMI database entity corresponding to
     that id.
     """
-    ent = cache.get(iden)
+    ent = None
+    if CACHE_ENABLED:
+        ent = cache.get(iden)
     if ent is None:
         u = urlopen(
             JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(iden)
@@ -70,7 +81,8 @@ def get_by_ismi_id(iden):
         s = u.read()
         ent = loads(s)['ent']
         u.close()
-        cache.set(iden, ent)
+        if CACHE_ENABLED:
+            cache.set(iden, ent)
     return ent
 
 
