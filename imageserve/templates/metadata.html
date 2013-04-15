@@ -19,7 +19,7 @@
     <div id="myModalBody" class="modal-body">
         <table class="table table-bordered">
             {% for key, val in md %}
-                <tr><td>{{key}}</td><td>{{val}}</td></tr>
+                <tr><td>{{key}}</td><td>{{val|safe}}</td></tr>
             {% endfor %}
         </table>
     </div>
