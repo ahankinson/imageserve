@@ -186,11 +186,20 @@
                 }
             };
             $("#diva-wrapper").one("ajaxComplete", function () {
-                updateWitness(currWit);
-                pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
-                           function (data) {
-                               dv.gotoPageByNumber(data);
-                           });
+                var currPage = this.getCurrentPage() + 1;
+                witForPage({'ms_id':{{ms_id}},
+                            'page': currPage},
+                            function (data) {
+                                if (currWit != data)
+                                updateWitness(data);
+                            });
+                if (currWit != -1) {
+                    updateWitness(currWit);
+                    pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
+                               function (data) {
+                                   dv.gotoPageByNumber(data);
+                               });
+                }
                 $("#title-select").change(function () {
                     var val = $("#title-select").val();
                     updateWitness(val);

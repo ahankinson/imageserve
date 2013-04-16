@@ -122,7 +122,7 @@ def manuscript(request, ms_id):
     try:
         curr_wit = int(curr_wit)
     except:
-        curr_wit = 0
+        curr_wit = -1
 
     pth = os.path.join(conf.IMG_DIR, m.directory)
     # witnesses = None
