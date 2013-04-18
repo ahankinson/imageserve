@@ -186,7 +186,7 @@
                 }
             };
             $("#diva-wrapper").one("ajaxComplete", function () {
-                var currPage = this.getCurrentPage() + 1;
+                var currPage = dv.getCurrentPage() + 1;
                 witForPage({'ms_id':{{ms_id}},
                             'page': currPage},
                             function (data) {

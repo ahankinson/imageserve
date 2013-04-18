@@ -1,6 +1,6 @@
 import re
 import os
-import lxml import etree, html
+from lxml import etree, html
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
