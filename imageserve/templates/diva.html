@@ -71,9 +71,9 @@
             enableGotoPage: true,
             fixedHeightGrid: false,
             contained: true,
-            iipServerURL: "https://images.rasi.mcgill.ca/fcgi-bin/iipsrv.fcgi?FIF={{image_path}}/",
-            divaserveURL: "https://images.rasi.mcgill.ca/divaserve",
-            imageDir: "{{ms_name}}",
+            iipServerURL: "{{ iipserver_url }}",
+            divaserveURL: "{{ divaserve_url }}",
+            imageDir: "{{ ms_name }}",
             {% if witnesses %}
                 onScroll: function (newPageIndex) {
                     if (!editMode) {
