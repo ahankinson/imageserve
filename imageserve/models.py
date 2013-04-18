@@ -1,5 +1,6 @@
 import re
 import os
+import lxml import etree, html
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -91,6 +92,13 @@ class AttDisplaySetting(models.Model):
         if match:
             val = match[0].get('ov')
             if val is not None:
+                if self.name == 'table_of_contents':
+                    root = html.fromstring(val)
+                    for a in root.xpath('.//a[@href]'):
+                        u = a.attrib.get('href')
+                        a.set('href', '#')
+                        a.set('onclick', 'window.open("{0}", "_blank")'.format(u))
+                    val = etree.tostring(root, pretty_print=True)
                 return [val]
         return [NO_DATA_MSG]
 
