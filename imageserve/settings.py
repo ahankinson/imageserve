@@ -5,9 +5,12 @@ import os
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 JSON_INTERFACE = "https://openmind-ismi-dev.mpiwg-berlin.mpg.de/om4-ismi/jsonInterface?"
+DIVASERVE_URL = "http://localhost:8000/divaserve"
+IIPSERVER_URL = "http://localhost:8080/fcgi-bin/iipsrv.fcgi?FIF={0}/"
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+CACHE_ENABLED = True
 
 NO_DATA_MSG = "Data not entered"
 

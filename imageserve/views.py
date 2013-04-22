@@ -1,4 +1,5 @@
 import os
+import re
 import conf
 from json import dumps
 from django.http import HttpResponse, Http404
@@ -10,7 +11,7 @@ from django.template import Template, Context
 from django.contrib.auth.views import logout
 from django.forms import ValidationError
 from imageserve import img_server
-from imageserve.helpers import get_keyvals
+from imageserve.helpers import get_keyvals, get_folios, get_att, get_rel
 from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
 from imageserve.settings import NO_DATA_MSG, DIVASERVE_URL, IIPSERVER_URL
 from guardian.shortcuts import get_objects_for_user, get_perms
@@ -57,8 +58,8 @@ def title_author(request):
     Title and Author information on the viewer page.
     """
     w = request.GET['wit_id']
-    ms_title = get_keyvals(RelDisplaySetting.objects.get(name='is_exemplar_of'), w)[1][0]
-    ms_author = get_keyvals(RelDisplaySetting.objects.get(name='was_created_by'), w)[1][0]
+    ms_title, = get_rel(w, 'is_exemplar_of')
+    ms_author, = get_rel(w, 'was_created_by')
     data = {'title': ms_title, 'author': ms_author}
     return HttpResponse(dumps(data), mimetype="text/json")
 
@@ -79,7 +80,8 @@ def metadata(request):
                         l.append((k, val))
                 else:
                     if len(vals) == 1:
-                        if val[0] == NO_DATA_MSG:
+                        val, = vals
+                        if val == NO_DATA_MSG:
                             continue
                     for val in vals:
                         l.append((k, val))
@@ -132,7 +134,7 @@ def manuscript(request, ms_id):
         if m.witnesses:
             if not curr_wit in range(len(m.witnesses)):
                 curr_wit = 0
-            titles = enumerate(m.witness_titles.split(','))
+            titles = enumerate(get_rel(w, 'is_exemplar_of')[0] for w in m.witnesses)
     
     data = {
         'title': 'Viewing {0}'.format(m.directory),
@@ -158,74 +160,83 @@ def logout_view(request):
     return redirect(next)
 
 
-def get_curr_pgrnglist(request, ms_id):
+def get_curr_folio_pgs(request):
     """
     Returns the PageRangeList for the Manuscript object with id
     ms_id for the current session.
     """
-    if not request.session.get('pgrnglist'):
-        request.session['pgrnglist'] = {}
-    if not request.session['pgrnglist'].get(ms_id):
+    ms_id = int(request.GET.get('ms_id'))
+    if not request.session.get('folio_pgs'):
+        request.session['folio_pgs'] = {}
+    if not request.session['folio_pgs'].get(ms_id):
         ms = Manuscript.objects.get(id=ms_id)
-        request.session['pgrnglist'][ms_id] = \
-            ms.witness_pages
-    pgrnglist = request.session['pgrnglist'][ms_id]
-    return pgrnglist
+        request.session['folio_pgs'][ms_id] = \
+            ms.folio_pgs
+    folio_pgs = request.session['folio_pgs'][ms_id]
+    return folio_pgs
 
 
 @login_required
-def set_curr_pgrnglist(request, ms_id, pgrnglist):
+def set_curr_folio_pgs(request, ms_id, folio_pgs):
     """
     Modifies the PageRangeList for the Manuscript object with id
     ms_id for the current session.
     """
-    if not request.session.get('pgrnglist'):
-        request.session['pgrnglist'] = {}
-    request.session['pgrnglist'][ms_id] = pgrnglist
+    if not request.session.get('folio_pgs'):
+        request.session['folio_pgs'] = {}
+    request.session['folio_pgs'][ms_id] = folio_pgs
     request.session.modified = True
+
+
+def folio_for_page(request):
+    """
+    Given the id of a Manuscript and a page number, returns
+    the first folio number on the specified page.
+    """
+    page = int(request.GET.get('page'))
+    folio_pgs = get_curr_folio_pgs(request)
+    folio = folio_pgs.get_folio(page)
+    return HttpResponse(dumps(folio), mimetype="text/json")
+
+
+def page_for_folio(request):
+    """
+    Given the id of a Manuscript and a folio number, returns
+    the first page with the given folio number.
+    """
+    folio = request.GET.get('folio')
+    folio_pgs = get_curr_folio_pgs(request)
+    page = folio_pgs.get_page(folio)
+    return HttpResponse(dumps(page), mimetype="text/json")
 
 
 def wit_for_page(request):
     """
-    Gives the index of the current witness given the current
+    Gives the ISMI ID of the current witness given the current
     Manuscript and current page in it. If no witness is specified
     for the given page, returns -1.
     """
     ms_id = int(request.GET.get('ms_id'))
     page = int(request.GET.get('page'))
     ms = Manuscript.objects.get(id=ms_id)
-    for i, pg_range in enumerate(ms.witness_pages):
-        if pg_range.first <= page and page <= pg_range.last:
-            return HttpResponse(dumps(i), mimetype="text/json")
+    for w in ms.witnesses:
+        folio_pgs = get_curr_folio_pgs(request)
+        first, last = map(folio_pgs.get_page, get_folios(w))
+        if first <= page and page <= last:
+            return HttpResponse(dumps(w), mimetype="text/json")
     return HttpResponse(dumps(-1), mimetype="text/json")
 
 
 def page_for_wit(request):
     """
-    Given a Manuscript id and the index of a witness in it,
-    returns the first (or with the optional `last` parameter,
-    last) page of that witness.
+    Given a Manuscript id and the ISMI ID of a witness in it,
+    returns the first page of that witness.
     """
-    last = request.GET.get('last')
-    ms_id = int(request.GET.get('ms_id'))
     wit = int(request.GET.get('wit'))
-    if last:
-        ret = get_curr_pgrnglist(request, ms_id)[wit].last
-    else:
-        ret = get_curr_pgrnglist(request, ms_id)[wit].first
-    return HttpResponse(dumps(ret), mimetype="text/json")
-
-
-def id_for_wit(request):
-    """
-    Given a Manuscript id and the index of a witness in it,
-    returns the ISMI id of the corresponding WITNESS object.
-    """
-    ms_id = int(request.GET.get('ms_id'))
-    wit = int(request.GET.get('wit'))
-    ms = Manuscript.objects.get(id=ms_id)
-    ret = ms.witnesses[wit]
-    return HttpResponse(dumps(ret), mimetype="text/json")
+    folio, _ = get_folios(wit)
+    folio_pgs = get_curr_folio_pgs(request)
+    page = folio_pgs.get_page(folio)
+    return HttpResponse(dumps(page), mimetype="text/json")
 
 
 @login_required
@@ -237,9 +248,9 @@ def set_page(request, first_last):
     ms_id = int(request.GET.get('ms_id'))
     page = int(request.GET.get('page'))
     wit = int(request.GET.get('wit'))
-    wit_pgs = get_curr_pgrnglist(request, ms_id)
+    wit_pgs = get_curr_folio_pgs(request, ms_id)
     setattr(wit_pgs[wit], first_last, page)
-    set_curr_pgrnglist(request, ms_id, wit_pgs)
+    set_curr_folio_pgs(request, ms_id, wit_pgs)
     return HttpResponse()
 
 
@@ -251,9 +262,9 @@ def save_pages(request):
     """
     ms_id = int(request.GET.get('ms_id'))
     ms = Manuscript.objects.get(id=ms_id)
-    pgrnglist = get_curr_pgrnglist(request, ms_id)
+    folio_pgs = get_curr_folio_pgs(request, ms_id)
     try:
-        ms.witness_pages = pgrnglist
+        ms.witness_pages = folio_pgs
         ms.clean_fields()
         ms.save()
     except ValidationError as e:

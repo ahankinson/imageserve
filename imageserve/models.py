@@ -1,13 +1,11 @@
-import re
 import os
 from lxml import etree, html
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from conf import IMG_DIR
-from imageserve.helpers import get_by_ismi_id, get_keyvals, get_name
-from imageserve.forms import IntegerListField, PageRangeListField
-from imageserve.forms import PageRange, PageRangeList
+from imageserve.helpers import get_by_ismi_id, get_keyvals, get_name, get_rel
+from imageserve.forms import IntegerListField, FolioPagesField, FolioPages
 from imageserve.settings import NO_DATA_MSG
 from south.modelsinspector import add_introspection_rules
 
@@ -97,7 +95,8 @@ class AttDisplaySetting(models.Model):
                     for a in root.xpath('.//a[@href]'):
                         u = a.attrib.get('href')
                         a.set('href', '#')
-                        a.set('onclick', 'window.open("{0}", "_blank")'.format(u))
+                        s = 'window.open(\"{0}\", \"_blank\")'.format(u)
+                        a.attrib['onclick'] = s
                     val = etree.tostring(root, pretty_print=True)
                 return [val]
         return [NO_DATA_MSG]
@@ -184,14 +183,8 @@ class Manuscript(models.Model):
     ismi_id = IsmiIdField(blank=True, null=True)
     num_files = models.IntegerField(editable=False, verbose_name="# Pages")
     witnesses = IntegerListField(editable=False)
-    witness_pages = PageRangeListField()
-    witness_titles = models.CharField(max_length=2000,
-                                      editable=False,
-                                      null=True)
-    witness_authors = models.CharField(max_length=2000,
-                                       editable=False,
-                                       null=True)
-    # has_folio_nums = models.BooleanField(default=True)
+    has_folio_nums = models.BooleanField(default=True)
+    folio_pgs = FolioPagesField(editable=False, null=True)
     
     class Meta:
         ordering = ['directory']
@@ -212,10 +205,9 @@ class Manuscript(models.Model):
         use with the manuscript index view.
         """
         if self.witnesses:
-            titles = self.witness_titles.split(',')
-            authors = self.witness_authors.split(',')
-            for i, (title, author) in enumerate(zip(titles, authors)):
-                yield i, title, author
+            titles = [get_rel(w, 'is_exemplar_of')[0] for w in self.witnesses]
+            authors = [get_rel(w, 'was_created_by')[0] for w in self.witnesses]
+            return zip(self.witnesses, titles, authors)
 
     def clean(self, *args, **kwargs):
         self.num_files = len(os.listdir(os.path.join(IMG_DIR, self.directory)))
@@ -228,57 +220,9 @@ class Manuscript(models.Model):
                 return super(Manuscript, self).clean(*args, **kwargs)
             rels = [r for r in c['tar_rels'] if r['name'] == 'is_part_of']
             wits = [r['src_id'] for r in rels]
-            if len(wits) > 1:
-                ents = [get_by_ismi_id(w) for w in wits]
-
-                def get_pages(folio):
-                    m = re.findall(r'(\d+)(a|b)?-(\d+)(a|b)?', folio)
-                    if m:
-                        first, first_ind, second, second_ind = m[0]
-                        first = int(first)*2 - 1
-                        if 'b' == first_ind:
-                            first += 1
-                        second = int(second)*2
-                        if 'a' == second_ind:
-                            second -= 1
-                        return PageRange(first, second)
-                    return PageRange(None, None)
-                folios = []
-                for e in ents:
-                    folios_att = [a for a in e['atts'] if a['name'] == 'folios']
-                    if folios_att:
-                        folios_att = folios_att[0]
-                        folios.append(folios_att['nov'])
-                    else:
-                        folios.append('')
-                pages = PageRangeList(map(get_pages, folios))
-                self.witnesses, self.witness_pages = \
-                    zip(*sorted(zip(wits, pages),
-                                    key=lambda t: t[1].first))
-            else:
-                self.witnesses = wits
-                self.witness_pages = \
-                    PageRangeList([PageRange(1, self.num_files)])
-            get_title = lambda w: get_keyvals(RelDisplaySetting.objects.get(
-                                             name='is_exemplar_of'),
-                                             w)[1][0]
-            get_author = lambda w: get_keyvals(RelDisplaySetting.objects.get(
-                                              name='was_created_by'),
-                                              w)[1][0]
-            self.witness_titles = ",".join(map(get_title, wits))
-            self.witness_authors = ",".join(map(get_author, wits))
-        if self.witnesses and self.witness_pages:
-            self.witnesses, self.witness_pages = \
-                zip(*sorted(zip(self.witnesses, self.witness_pages),
-                            key=lambda t: t[1].first))
-            get_title = lambda w: get_keyvals(RelDisplaySetting.objects.get(
-                                             name='is_exemplar_of'),
-                                             w)[1][0]
-            get_author = lambda w: get_keyvals(RelDisplaySetting.objects.get(
-                                              name='was_created_by'),
-                                              w)[1][0]
-            self.witness_titles = ",".join(map(get_title, self.witnesses))
-            self.witness_authors = ",".join(map(get_author, self.witnesses))
+            self.witnesses = wits
+        if not self.folio_pgs:
+            self.folio_pgs = FolioPages(num_pages=self.num_files)
         return super(Manuscript, self).clean(*args, **kwargs)
 
     def __unicode__(self):

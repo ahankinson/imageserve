@@ -12,6 +12,7 @@ add_introspection_rules([], ["^imageserve\.forms\.PageRangeFormField"])
 add_introspection_rules([], ["^imageserve\.forms\.PageRangeWidget"])
 add_introspection_rules([], ["^imageserve\.forms\.PageRangeListFormField"])
 add_introspection_rules([], ["^imageserve\.forms\.PageRangeListWidget"])
+add_introspection_rules([], ["^imageserve\.forms\.FolioPagesField"])
 
 
 class PageRange(object):
@@ -32,21 +33,21 @@ class PageRangeList(object):
         return self._page_ranges[key]
 
 
-#def folios(**kwargs):
-#    """
-#    Generator for folio numbers. Optional keyword argument `start`
-#    lets you specify a different start point, non-inclusive. Must be a
-#    valid folio number, or else stuff will break.
-#    """
-#    suffixes = {True: 'a', False: 'b'}
-#    unsuff = {v:k for k,v in suffixes.items()}
-#    start = kwargs.get('start', '0b')
-#    for k, suff in re.findall(r'(\d+)(a|b)', start): pass
-#    k = int(k)
-#    while True:
-#        if not unsuff[suff]: k += 1
-#        suff = suffixes[not unsuff[suff]]
-#        yield str(k)+suff
+def folios(**kwargs):
+   """
+   Generator for folio numbers. Optional keyword argument `start`
+   lets you specify a different start point, non-inclusive. Must be a
+   valid folio number, or else stuff will break.
+   """
+   suffixes = {True: 'a', False: 'b'}
+   unsuff = dict((v,k) for k,v in suffixes.items())
+   start = kwargs.get('start', '0b')
+   for k, suff in re.findall(r'(\d+)(a|b)', start): pass
+   k = int(k)
+   while True:
+       if not unsuff[suff]: k += 1
+       suff = suffixes[not unsuff[suff]]
+       yield str(k)+suff
 
 
 class FolioPages(object):
@@ -85,9 +86,7 @@ class FolioPages(object):
         folio numbers after the selected page in this manner, regardless
         of whether those pages have folio numbers chosen or not.
         """
-        overwrite = False
-        if 'overwrite' in kwargs:
-            overwrite = kwargs.pop('overwrite')
+        overwrite = kwargs.get('overwrite', False)
         if self._folio_pages[page]:
             zipped = zip(self._folio_pages.items()[page:], folios(start=self.get_folio(page)))
             for ((key, vals), folio) in zipped:
@@ -137,6 +136,8 @@ class FolioPagesField(models.Field):
     def to_python(self, value):
         if isinstance(value, FolioPages):
             return value
+        if value == 'None':
+            return None
         if value:
             folios_list = loads(value)
             return FolioPages(folios_list)

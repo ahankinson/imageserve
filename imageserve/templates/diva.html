@@ -29,7 +29,6 @@
         }
         var pageForWit = apiFunc("/page_for_wit");
         var witForPage = apiFunc("/wit_for_page");
-        var idForWit = apiFunc("/id_for_wit");
 
         var updateWitness = function (nextWit) {
             currWit = nextWit;
@@ -38,21 +37,17 @@
             $("#witness-author").html("Loading Witness Author...");
             if (nextWit != -1) {
                 $("#title-select").val(nextWit);
-                idForWit({'ms_id': {{ms_id}}, 'wit': nextWit},
-                    function (witId) {
-                        $.ajax({
-                            url: '/title_author',
-                            context: document.body,
-                            data: {'wit_id': witId},
-                            beforeSend: function (xhr) {
-                                xhr.overrideMimeType("text/json");
-                            },
-                        }).done(function (data, textStatus, jqXHR) {
-                            $("#witness-title").html(data['title']);
-                            $("#witness-author").html(data['author']);
-                        });
-                    }
-                )
+                $.ajax({
+                    url: '/title_author',
+                    context: document.body,
+                    data: {'wit_id': nextWit},
+                    beforeSend: function (xhr) {
+                        xhr.overrideMimeType("text/json");
+                    },
+                }).done(function (data, textStatus, jqXHR) {
+                    $("#witness-title").html(data['title']);
+                    $("#witness-author").html(data['author']);
+                });
             } else {
                 // $("#myModalBody").html(
                 //     "No witness has been identified for this page."
@@ -213,12 +208,8 @@
                 $("#edit-pages").click(toggleEditMode);
             });
             $("#md-button").click( function () {
-                    idForWit({'ms_id': {{ms_id}}, 'wit': currWit},
-                        function (witId) {
-                            window.open('/metadata?wit_id=' + String(witId)
-                                        + '&ms_name={{ms_name}}', "_blank")
-                        }
-                    );
+                    var url = '/metadata?wit_id=' + currWit + '&ms_name={{ms_name}}';
+                    window.open(url, "_blank");
                 }
             );
         {% endif %}

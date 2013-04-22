@@ -1,6 +1,8 @@
 import os
+import re
 from urllib import urlopen
 from json import loads
+import imageserve.models
 from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG, CACHE_ENABLED
 from imageserve.conf import IMG_DIR
 from django.core.cache import cache
@@ -67,7 +69,7 @@ def get_keyvals(setting, iden):
 
 def get_by_ismi_id(iden):
     """
-    Given a valid ISMI database id `iden`, return a Python dict containing
+    Given a valid ISMI database id `iden`, returns a Python dict containing
     all the relevant info from the ISMI database entity corresponding to
     that id.
     """
@@ -84,6 +86,29 @@ def get_by_ismi_id(iden):
         if CACHE_ENABLED:
             cache.set(iden, ent)
     return ent
+
+
+def get_att(ismi_id, att_name):
+    a = imageserve.models.AttDisplaySetting.objects.get(name=att_name)
+    val, = a.get_vals(ismi_id)
+    return val
+
+
+def get_rel(ismi_id, rel_name):
+    r = imageserve.models.RelDisplaySetting.objects.get(name=rel_name)
+    return r.get_vals(ismi_id)
+
+
+def get_folios(wit):
+    """
+    Returns the folios attribute on the witness with the
+    specified id.
+    """
+    witness = get_by_ismi_id(wit)
+    att, = [a for a in witness['atts'] if a['name'] == 'folios']
+    folios = att.get('ov')
+    first, last = re.findall(r'(\d+[a|b]?)-(\d+[a|b]?)', folios)
+    return (first, last)
 
 
 def register_defs():
