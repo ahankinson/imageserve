@@ -89,13 +89,15 @@ def get_by_ismi_id(iden):
 
 
 def get_att(ismi_id, att_name):
-    a = imageserve.models.AttDisplaySetting.objects.get(name=att_name)
+    from imageserve.models import AttDisplaySetting
+    a = AttDisplaySetting.objects.get(name=att_name)
     val, = a.get_vals(ismi_id)
     return val
 
 
 def get_rel(ismi_id, rel_name):
-    r = imageserve.models.RelDisplaySetting.objects.get(name=rel_name)
+    from imageserve.models import RelDisplaySetting
+    r = RelDisplaySetting.objects.get(name=rel_name)
     return r.get_vals(ismi_id)
 
 
@@ -104,10 +106,10 @@ def get_folios(wit):
     Returns the folios attribute on the witness with the
     specified id.
     """
-    witness = get_by_ismi_id(wit)
-    att, = [a for a in witness['atts'] if a['name'] == 'folios']
-    folios = att.get('ov')
-    first, last = re.findall(r'(\d+[a|b]?)-(\d+[a|b]?)', folios)
+    folios = get_att(wit, 'folios')
+    if folios == NO_DATA_MSG:
+        return
+    (first, last), = re.findall(r'(\d+[a|b]?)-(\d+[a|b]?)', folios)
     return (first, last)
 
 

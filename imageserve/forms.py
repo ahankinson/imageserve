@@ -62,8 +62,8 @@ class FolioPages(object):
         if folios_list is None:
             num_pages = kwargs.get('num_pages')
             if not num_pages:
-                msg = ("If no folio list is provided, "
-                + "keyword argument `num_pages` is required")
+                msg = ('If no folio list is provided, '
+                + 'keyword argument `num_pages` is required')
                 raise Exception(msg)
             folios_list = [[] for _ in range(num_pages)]
         gen = enumerate(folios_list, start=1)
@@ -74,7 +74,11 @@ class FolioPages(object):
         Given a folio number in string form, return the first page on which
         that folio number occurs.
         """
-        return min(k for k,v in self._folio_pages.iteritems() if folio in v)
+        if folio.isdigit():
+            return int(folio)
+        for v in self._folio_pages.itervalues():
+            if folio in v:
+                return min(k for k,v in self._folio_pages.iteritems() if folio in v)
     
     def interpolate_after(self, page, **kwargs):
         """
@@ -88,11 +92,12 @@ class FolioPages(object):
         """
         overwrite = kwargs.get('overwrite', False)
         if self._folio_pages[page]:
-            zipped = zip(self._folio_pages.items()[page:], folios(start=self.get_folio(page)))
+            zipped = zip(self._folio_pages.items()[page:],
+                         folios(start=self.get_folio(page)))
             for ((key, vals), folio) in zipped:
                 if not overwrite:
                     if vals:
-                        break
+                        return
                 self._folio_pages[key] = [folio]
         else:
             msg = "Cannot interpolate without a starting point"
@@ -105,6 +110,12 @@ class FolioPages(object):
         for i, n in zip(folios(),self._folio_pages):
             if i in self._folio_pages[page]:
                 return i
+    
+    def clear_page(self, page):
+        """
+        Removes all folio numbers from the specified page.
+        """
+        self._folio_pages[page] = []
     
     def __setitem__(self, key, value):
         """
@@ -119,15 +130,15 @@ class FolioPages(object):
         Adds the specified folio number to the list of folio numbers on the specified
         page.
         """
-        self._folio_pages[page] += [folio]
+        self._folio_pages[page].append(folio)
     
     def __str__(self):
         return dumps(self._folio_pages.values())
 
 
 class FolioPagesField(models.Field):
-    description = ("JSON object describing the correspondence "
-    + "between page numbers and folio numbers")
+    description = ('JSON object describing the correspondence '
+    + 'between page numbers and folio numbers')
     __metaclass__ = models.SubfieldBase
     
     def db_type(self, connection):
@@ -151,7 +162,7 @@ class FolioPagesField(models.Field):
 
 
 class IntegerListField(models.Field):
-    description = "A list of integers"
+    description = 'A list of integers'
     __metaclass__ = models.SubfieldBase
 
     def db_type(self, connection):
@@ -174,7 +185,7 @@ class IntegerListField(models.Field):
 
 
 class PageRangeListField(models.Field):
-    description = "A list of page ranges"
+    description = 'A list of page ranges'
     __metaclass__ = models.SubfieldBase
 
     def db_type(self, connection):
@@ -210,7 +221,7 @@ class PageRangeListField(models.Field):
                 # Can this be simplified a bit? It's quite hard to follow.
                 if ((pages.first <= other_pages.first and other_pages.first <= pages.last) or
                    (other_pages.first <= pages.first and pages.first <= other_pages.last)):
-                    raise forms.ValidationError("Overlapping page ranges")
+                    raise forms.ValidationError('Overlapping page ranges')
         return super(PageRangeListField, self).clean(value, model_instance)
 
     def formfield(self, **kwargs):
@@ -234,11 +245,11 @@ class PageRangeFormField(forms.MultiValueField):
                     return PageRange(first, last)
                 else:
                     raise forms.ValidationError(
-                        "First page must come before last page"
+                        'First page must come before last page'
                     )
             elif first or last:
-                raise forms.ValidationError("Enter a first AND last page")
-        raise forms.ValidationError("This form is required")
+                raise forms.ValidationError('Enter a first AND last page')
+        raise forms.ValidationError('This form is required')
 
 
 class PageRangeWidget(forms.MultiWidget):
@@ -271,7 +282,7 @@ class PageRangeListFormField(forms.MultiValueField):
                 # Same here -- this needs to be made more readable
                 if ((pages.first <= other_pages.first and other_pages.first <= pages.last) or
                    (other_pages.first <= pages.first and pages.first <= other_pages.last)):
-                    raise forms.ValidationError("Overlapping page ranges")
+                    raise forms.ValidationError('Overlapping page ranges')
         return PageRangeList(data_list)
 
 
@@ -288,11 +299,11 @@ class PageRangeListWidget(forms.MultiWidget):
 
     def format_output(self, rendered_widgets):
         labels = [get_by_ismi_id(w).get('ov') for w in self.witnesses]
-        header = u'''<tr>
+        header = u"""<tr>
             <th>Witness</th>
             <th>First Page</th>
             <th>Last Page</th>
-        </tr>'''
+        </tr>"""
         zipped = zip(labels, rendered_widgets)
         prerenders = [u'<tr><td>' + l + u'</td>' + w + u'</tr>' for l, w in zipped]
         rows = u'\n'.join(prerenders)

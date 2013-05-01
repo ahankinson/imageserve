@@ -13,8 +13,13 @@ urlpatterns = patterns('',
     url(r'^login/?', 'django.contrib.auth.views.login', {'template_name': 'templates/login.html'}),
     url(r'^logout/?', views.logout_view),
     url(r'^wit_for_page$', views.wit_for_page),
+    url(r'^folio_for_page$', views.folio_for_page),
+    url(r'^page_for_folio$', views.page_for_folio),
     url(r'^page_for_wit$', views.page_for_wit),
-    url(r'^set_page/(?P<first_last>first|last)$', views.set_page),
-    url(r'^save_pages$', views.save_pages),
-    url(r'^title_author$', views.title_author)
+    url(r'^set_folio$', views.set_folio),
+    url(r'^interpolate_after$', views.interpolate_after),
+    url(r'^title_author$', views.title_author),
+    url(r'^save_folios$', views.save_folios),
+    url(r'^remove_folios$', views.remove_folios),
+    url(r'^discard_changes$', views.discard_changes)
 )

@@ -7,10 +7,8 @@
 {% block header %}
     <link rel="stylesheet" href="{{ STATIC_URL }}css/diva.min.css" type="text/css" />
     <script type="text/javascript" src="{{ STATIC_URL }}js/diva.min.js"></script>
-
     <script type="text/javascript">
     {% if witnesses %}
-        var editMode = false;
         var currWit = {{curr_wit}};
         var apiFunc = function (url) {
             func = function (kwargs, callback) {
@@ -29,6 +27,14 @@
         }
         var pageForWit = apiFunc("/page_for_wit");
         var witForPage = apiFunc("/wit_for_page");
+        {% if perms.manuscript.can_change %}
+            var editMode = false;
+            var setFolio = apiFunc("/set_folio");
+            var interpolateAfter = apiFunc("/interpolate_after");
+            var saveFolios = apiFunc("/save_folios");
+            var removeFolios = apiFunc("/remove_folios");
+            var discardChanges = apiFunc("/discard_changes");
+        {% endif %}
 
         var updateWitness = function (nextWit) {
             currWit = nextWit;
@@ -71,156 +77,210 @@
             imageDir: "{{ ms_name }}",
             {% if witnesses %}
                 onScroll: function (newPageIndex) {
-                    if (!editMode) {
-                        var currPage = this.getCurrentPage() + 1;
-                        witForPage({'ms_id':{{ms_id}},
-                                    'page': currPage},
-                                    function (data) {
-                                        if (currWit != data)
-                                        updateWitness(data);
-                                    });
-                    }
+                    var currPage = this.getCurrentPage() + 1;
+                    witForPage({'ms_id':{{ms_id}},
+                                'page': currPage},
+                                function (data) {
+                                    if (currWit != data[1]) {
+                                        updateWitness(data[1]);
+                                    }
+                                    $("#curr-folio").html(data[0]);
+                                });
                 },
             {% endif %}
         });
         var dv = $("#diva-wrapper").data("diva");
         {% if witnesses %}
-            var toggleEditMode = function () {
-                if (editMode) {
-                    editMode = false;
-                    $("#edit-pages").html("Edit page numbers");
-                    $("#page-tools").remove();
-                    $("#first-page-dd").remove();
-                    $("#last-page-dd").remove();
-                    $("#save-pages-dd").remove();
-                } else {
-                    editMode = true;
-                    $("#edit-pages").html("Stop editing");
-                    $("#witness-tools").append(
-                        $("<dt>", {id: "page-tools"})
-                        .append(document.createTextNode("Page Editing Tools:")),
-                        $("<dd>", {id: "first-page-dd"})
-                        .append(
-                            $("<a>", {id: "goto-first-page"})
-                            .attr({"href": "#",
-                                   "role": "button",
-                                   "class":"btn"})
-                            .append(document.createTextNode(
-                                "Go to first page"
-                            )),
-                            $("<a>", {id: "set-first-page"})
-                            .attr({"href": "#",
-                                   "role": "button",
-                                   "class":"btn"})
-                            .append(document.createTextNode("Set first page"))
-                        ),
-                        $("<dd>", {id: "last-page-dd"})
-                        .append(
-                            $("<a>", {id: "goto-last-page"})
-                            .attr({"href": "#",
-                                   "role": "button",
-                                   "class":"btn"})
-                            .append(document.createTextNode("Go to last page")),
-                            $("<a>", {id: "set-last-page"})
-                            .attr({"href": "#",
-                                   "role": "button",
-                                   "class":"btn"})
-                            .append(document.createTextNode("Set last page"))
-                        ),
-                        $("<dd>", {id: "save-pages-dd"})
-                        .append(
-                            $("<a>", {id: "save-pages"})
-                            .attr({"href": "#",
-                                   "role": "button",
-                                   "class":"btn"})
-                            .append(document.createTextNode("Save pages"))
-                        )
-                    );
-                    $("#goto-first-page").click( function () {
-                        pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
-                                   function (data) {
-                                       dv.gotoPageByNumber(data);
-                                   });
-                    });
-                    $("#goto-last-page").click( function () {
-                        pageForWit({'ms_id': {{ms_id}},
-                                    'wit': currWit,
-                                    'last': true},
-                                   function (data) {
-                                       dv.gotoPageByNumber(data);
-                                   });
-                    });
-                    $("#set-first-page").click( function () {
-                        apiFunc('/set_page/first')(
-                            {'ms_id': {{ms_id}},
-                             'wit': currWit,
-                             'page': dv.getCurrentPage() + 1},
-                            function () {}
-                        );
-                    });
-                    $("#set-last-page").click( function () {
-                        apiFunc('/set_page/last')(
-                            {'ms_id': {{ms_id}},
-                             'wit': currWit,
-                             'page': dv.getCurrentPage() + 1},
-                            function () {}
-                        );
-                    });
-                    $("#save-pages").click( function () {
-                        apiFunc('/save_pages')(
-                            {'ms_id': {{ms_id}}},
-                            function (data) {
-                                if (!data['success']) {
-                                    alert(data['error']);
-                                } else {
-                                    alert("Changes successfully saved.");
-                                }
-                            }
-                        );
-                    })
-                }
-            };
             $("#diva-wrapper").one("ajaxComplete", function () {
                 var currPage = dv.getCurrentPage() + 1;
                 witForPage({'ms_id':{{ms_id}},
                             'page': currPage},
                             function (data) {
-                                if (currWit != data)
-                                updateWitness(data);
+                                if (currWit != data[1]) {
+                                    updateWitness(data[1]);
+                                }
+                                $("#curr-folio").html(data[0]);
                             });
                 if (currWit != -1) {
                     updateWitness(currWit);
                     pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
                                function (data) {
+                                   if (data != -1)
                                    dv.gotoPageByNumber(data);
                                });
                 }
                 $("#title-select").change(function () {
                     var val = $("#title-select").val();
                     updateWitness(val);
-                    if (!editMode) {
-                        pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
-                                   function (data) {
-                                       dv.gotoPageByNumber(data);
-                                   });
-                    }
+                    pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
+                               function (data) {
+                                   dv.gotoPageByNumber(data);
+                               });
                 });
-                $("#edit-pages").click(toggleEditMode);
+                $("#1-diva-goto-page").submit( function () {
+                    input = $("#1-diva-goto-page-input").val();
+                    $.ajax({
+                        url: '/page_for_folio',
+                        async: false,
+                        context: document.body,
+                        data: {'ms_id': {{ms_id}},
+                               'folio': input},
+                        timeout: 3000,
+                        success: function (data, statusText, xhr, $form) {
+                            if (data != null) {
+                                if (1 <= data && data <= {{num_files}}) {
+                                    dv.gotoPageByNumber(data);
+                                    return;
+                                }
+                            }
+                            alert("Invalid page or folio number");
+                        }
+                    });
+                });
             });
             $("#md-button").click( function () {
                     var url = '/metadata?wit_id=' + currWit + '&ms_name={{ms_name}}';
                     window.open(url, "_blank");
                 }
             );
+            {% if perms.manuscript.can_change %}
+                $("#edit-folio-nums").click( function () {
+                    if (editMode) {
+                        discardChanges({'ms_id':{{ms_id}}}, function () {
+                            var currPage = dv.getCurrentPage() + 1;
+                            witForPage({'ms_id':{{ms_id}},
+                                        'page': currPage},
+                                        function (data) {
+                                            if (currWit != data[1]) {
+                                                updateWitness(data[1]);
+                                            }
+                                            $("#curr-folio").html(data[0]);
+                                        });
+                        });
+                        $("#edit-folio-nums").html(
+                            'Edit Folio Numbers'
+                        );
+                        $("#folio-tools").remove();
+                        $("#remove-folios").remove();
+                        $("#dt-interpolate").remove();
+                        $("#dd-overwrite").remove();
+                        $("#interpolate").remove();
+                        $("#save").remove();
+                        editMode = false;
+                    } else {
+                        $("#edit-folio-nums").html(
+                            'Stop Editing (Discard Changes)'
+                        );
+                        $("#witness-tools").append(
+                            $("<dd>", {id: 'folio-tools'}).append(
+                                $("<div>").append(
+                                    $("<input>", {id: 'folio-num'})
+                                    .attr({
+                                        'type': 'text',
+                                        'size': '4',
+                                        'maxlength': '4'
+                                    }),
+                                    $("<select>", {id: 'folio-select'}).append(
+                                        $("<option>").attr({'value': 'a'}).append(
+                                            document.createTextNode('a')
+                                        ),
+                                        $("<option>").attr({'value': 'b'}).append(
+                                            document.createTextNode('b')
+                                        )
+                                    ),
+                                    $("<a>", {id: 'btn-set'}).attr({
+                                        'role': 'button',
+                                        'class': 'btn'
+                                    }).append(
+                                        document.createTextNode(
+                                            'Set Folio Number'
+                                        )
+                                    )
+                                )
+                            ),
+                            $("<dd>", {id: 'remove-folios'}).append(
+                                $("<a>", {id: 'btn-remove-folios'}).attr({
+                                    'role': 'button',
+                                    'class': 'btn'
+                                }).append(
+                                    document.createTextNode(
+                                        'Remove Folio Numbers'
+                                    )
+                                )
+                            ),
+                            $("<dt>", {id: 'dt-interpolate'}).append(
+                                document.createTextNode(
+                                    'Interpolate Folio Numbers'
+                                )
+                            ),
+                            $("<dd>", {id: 'dd-overwrite'}).append(
+                                document.createTextNode(
+                                    'Overwrite consequent folio numbers?'
+                                ),
+                                $("<input>", {id: 'overwrite'}).attr({
+                                    'type': 'checkbox'
+                                })
+                            ),
+                            $("<dd>", {id: 'interpolate'}).append(
+                                $("<a>", {id: 'btn-interpolate'}).attr({
+                                    'role': 'button',
+                                    'class': 'btn'
+                                }).append(
+                                    document.createTextNode(
+                                        'Interpolate after'
+                                    )
+                                )
+                            ),
+                            $("<dt>", {id: 'save'}).append(
+                                $("<a>", {id: 'btn-save'}).attr({
+                                    'role': 'button',
+                                    'class': 'btn'
+                                }).append(
+                                    document.createTextNode(
+                                        'Save Changes'
+                                    )
+                                )
+                            )
+                        );
+                        $("#btn-set").click( function () {
+                            var currPage = dv.getCurrentPage() + 1;
+                            var val = $("#folio-num").val() + $("#folio-select").val();
+                            setFolio({'ms_id': {{ms_id}}, 'page': currPage, 'folio': val},
+                                function (data) {
+                                    $("#curr-folio").html(data);
+                                }
+                            );
+                        });
+                        $("#btn-interpolate").click( function () {
+                            var currPage = dv.getCurrentPage() + 1;
+                            var overwrite = Number($("#overwrite").prop('checked'));
+                            interpolateAfter({'ms_id': {{ms_id}},
+                                              'page': currPage,
+                                              'overwrite': overwrite},
+                                             function () {});
+                            $("#overwrite").prop('checked', false);
+                        });
+                        $("#btn-save").click( function () {
+                            saveFolios({'ms_id': {{ms_id}}}, function (data) {
+                                alert(data);
+                            });
+                        });
+                        $("#btn-remove-folios").click( function () {
+                            var currPage = dv.getCurrentPage() + 1;
+                            removeFolios(
+                                {'ms_id': {{ms_id}}, 'page': currPage},
+                                function (data) {
+                                    $("#curr-folio").html(data);
+                                }
+                            );
+                        })
+                        editMode = true;
+                    }
+                });
+            {% endif %}
         {% endif %}
     });
     </script>
-{% endblock %}
-
-{% block navbar %}
-    {% if perms.manuscript.can_change %}
-        <li><a href="#" id="edit-pages">Edit page numbers</a></li>
-    {% endif %}
 {% endblock %}
 
 {% block wrap %}
@@ -242,6 +302,10 @@
                             Show Witness Info
                         </a>
                     </dd>
+                    <dd>Current Folio: <strong id="curr-folio"></strong></dd>
+                    {% if perms.manuscript.can_change %}
+                        <dt><a href="#" id="edit-folio-nums">Edit Folio Numbers</a></dt>
+                    {% endif %}
                 </dl>
             {% else %}
                 <h3>

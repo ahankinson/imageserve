@@ -132,9 +132,9 @@ def manuscript(request, ms_id):
     if m.ismi_id is not None:
         ismi_data = True
         if m.witnesses:
-            if not curr_wit in range(len(m.witnesses)):
-                curr_wit = 0
-            titles = enumerate(get_rel(w, 'is_exemplar_of')[0] for w in m.witnesses)
+            if not curr_wit in m.witnesses:
+                curr_wit = -1
+            titles = [(w, get_rel(w, 'is_exemplar_of')[0]) for w in m.witnesses]
     
     data = {
         'title': 'Viewing {0}'.format(m.directory),
@@ -147,6 +147,7 @@ def manuscript(request, ms_id):
         'ismi_data': ismi_data,
         'ms_id': ms_id,
         'path': quote_plus(request.get_full_path()),
+        'num_files': m.num_files,
     }
     return render(request, "templates/diva.html", data)
 
@@ -177,11 +178,12 @@ def get_curr_folio_pgs(request):
 
 
 @login_required
-def set_curr_folio_pgs(request, ms_id, folio_pgs):
+def set_curr_folio_pgs(request, folio_pgs):
     """
     Modifies the PageRangeList for the Manuscript object with id
     ms_id for the current session.
     """
+    ms_id = int(request.GET.get('ms_id'))
     if not request.session.get('folio_pgs'):
         request.session['folio_pgs'] = {}
     request.session['folio_pgs'][ms_id] = folio_pgs
@@ -219,12 +221,17 @@ def wit_for_page(request):
     ms_id = int(request.GET.get('ms_id'))
     page = int(request.GET.get('page'))
     ms = Manuscript.objects.get(id=ms_id)
+    folio_pgs = get_curr_folio_pgs(request)
+    folio = folio_pgs.get_folio(page)
     for w in ms.witnesses:
-        folio_pgs = get_curr_folio_pgs(request)
-        first, last = map(folio_pgs.get_page, get_folios(w))
-        if first <= page and page <= last:
-            return HttpResponse(dumps(w), mimetype="text/json")
-    return HttpResponse(dumps(-1), mimetype="text/json")
+        folios = get_folios(w)
+        if not folios:
+            continue
+        first, last = map(folio_pgs.get_page, folios)
+        if first and last:
+            if first <= page and page <= last:
+                return HttpResponse(dumps((str(folio), w)), mimetype="text/json")
+    return HttpResponse(dumps((str(folio), -1)), mimetype="text/json")
 
 
 def page_for_wit(request):
@@ -233,43 +240,78 @@ def page_for_wit(request):
     returns the first page of that witness.
     """
     wit = int(request.GET.get('wit'))
-    folio, _ = get_folios(wit)
+    folios = get_folios(wit)
+    if not folios:
+        return HttpResponse(dumps(-1), mimetype="text/json")
+    folio, _ = folios
     folio_pgs = get_curr_folio_pgs(request)
     page = folio_pgs.get_page(folio)
     return HttpResponse(dumps(page), mimetype="text/json")
 
 
 @login_required
-def set_page(request, first_last):
+def set_folio(request):
     """
     In the page number editing mode, changes the first or
     last page of a witness in a given manuscript.
     """
-    ms_id = int(request.GET.get('ms_id'))
     page = int(request.GET.get('page'))
-    wit = int(request.GET.get('wit'))
-    wit_pgs = get_curr_folio_pgs(request, ms_id)
-    setattr(wit_pgs[wit], first_last, page)
-    set_curr_folio_pgs(request, ms_id, wit_pgs)
-    return HttpResponse()
-
+    folio = request.GET.get('folio')
+    folio_pgs = get_curr_folio_pgs(request)
+    folio_pgs[page] = folio
+    set_curr_folio_pgs(request, folio_pgs)
+    return HttpResponse(dumps(folio), mimetype="text/json")
 
 @login_required
-def save_pages(request):
+def interpolate_after(request):
     """
-    Saves the session-scope PageRangeList for the Manuscript
-    with id `ms_id` to the database.
+    Given a manuscript's id, a page number, and the boolean
+    `overwrite` argument, interpolates the page numbers in
+    the manuscript after the given page.
+    """
+    page = int(request.GET.get('page'))
+    overwrite = bool(int(request.GET.get('overwrite')))
+    folio_pgs = get_curr_folio_pgs(request)
+    folio_pgs.interpolate_after(page, overwrite=overwrite)
+    set_curr_folio_pgs(request, folio_pgs)
+    return HttpResponse()
+
+@login_required
+def save_folios(request):
+    """
+    Given a manuscript's id, saves the specified manuscript to have
+    the folio pages associated to the current session.
+    """
+    ms_id = int(request.GET.get('ms_id'))
+    folio_pgs = get_curr_folio_pgs(request)
+    ms = Manuscript.objects.get(id=ms_id)
+    ms.folio_pgs = folio_pgs
+    try:
+        ms.save()
+        return HttpResponse(dumps('Changes successfully saved'), mimetype="text/json")
+    except Exception as e:
+        msg = 'An error occurred and your changes could not be saved:\n{0}'
+        return HttpResponse(dumps(msg.format(e)), mimetype="text/json")
+
+@login_required
+def remove_folios(request):
+    """
+    Given a manuscript's id and a page number, removes all folio numbers
+    for the specified page in the specified manuscript.
+    """
+    page = int(request.GET.get('page'))
+    folio_pgs = get_curr_folio_pgs(request)
+    folio_pgs.clear_page(page)
+    set_curr_folio_pgs(request, folio_pgs)
+    return HttpResponse(dumps(str(None)), mimetype="text/json")
+
+@login_required
+def discard_changes(request):
+    """
+    Given a manuscript's id, resets the session's folio numbers to the
+    ones stored in the database for that manuscript.
     """
     ms_id = int(request.GET.get('ms_id'))
     ms = Manuscript.objects.get(id=ms_id)
-    folio_pgs = get_curr_folio_pgs(request, ms_id)
-    try:
-        ms.witness_pages = folio_pgs
-        ms.clean_fields()
-        ms.save()
-    except ValidationError as e:
-        return HttpResponse(
-            dumps({"success": False, "error": str(e)}),
-            mimetype="text/json"
-        )
-    return HttpResponse(dumps({"success": True}), mimetype="text/json")
+    set_curr_folio_pgs(request, ms.folio_pgs)
+    return HttpResponse()
