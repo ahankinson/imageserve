@@ -11,7 +11,7 @@ from django.template import Template, Context
 from django.contrib.auth.views import logout
 from django.forms import ValidationError
 from imageserve import img_server
-from imageserve.helpers import get_keyvals, get_folios, get_att, get_rel
+from imageserve.helpers import get_keyvals, get_folios, get_rel
 from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
 from imageserve.settings import NO_DATA_MSG, DIVASERVE_URL, IIPSERVER_URL
 from guardian.shortcuts import get_objects_for_user, get_perms

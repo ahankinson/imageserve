@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from conf import IMG_DIR
-from imageserve.helpers import get_by_ismi_id, get_keyvals, get_name, get_rel
+from imageserve.helpers import get_by_ismi_id, get_name, get_rel
 from imageserve.forms import IntegerListField, FolioPagesField, FolioPages
 from imageserve.settings import NO_DATA_MSG
 from south.modelsinspector import add_introspection_rules
