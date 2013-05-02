@@ -2,7 +2,6 @@ import os
 import re
 from urllib import urlopen
 from json import loads
-import imageserve.models
 from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG, CACHE_ENABLED
 from imageserve.conf import IMG_DIR
 from django.core.cache import cache
@@ -89,13 +88,15 @@ def get_by_ismi_id(iden):
 
 
 def get_att(ismi_id, att_name):
-    a = imageserve.models.AttDisplaySetting.objects.get(name=att_name)
+    from imageserve.models import AttDisplaySetting
+    a = AttDisplaySetting.objects.get(name=att_name)
     val, = a.get_vals(ismi_id)
     return val
 
 
 def get_rel(ismi_id, rel_name):
-    r = imageserve.models.RelDisplaySetting.objects.get(name=rel_name)
+    from imageserve.models import RelDisplaySetting
+    r = RelDisplaySetting.objects.get(name=rel_name)
     return r.get_vals(ismi_id)
 
 
