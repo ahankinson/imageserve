@@ -17,7 +17,7 @@ class Command(BaseCommand):
             u = urlopen(JSON_INTERFACE + "method=get_rels&rel_name={0}".format(r.name))
             rels = loads(u.read())['rels']
             u.close()
-            d = {e.get('src_id'): [] for e in rels}
+            d = dict((e.get('src_id'), []) for e in rels)
             for rel in rels:
                 for key in ['src_oc', 'tar_oc']:
                     if key in rel:
@@ -31,7 +31,7 @@ class Command(BaseCommand):
             u = urlopen(JSON_INTERFACE + "method=get_ents&oc={0}".format(oc))
             ents = loads(u.read())['ents']
             u.close()
-            objs.update({e['id']: get_name(e) for e in ents})
+            objs.update(dict((e['id'], get_name(e)) for e in ents))
             del ents
         print 'compiling connections...'
         mapper = {}
