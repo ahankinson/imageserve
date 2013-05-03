@@ -57,7 +57,7 @@ def title_author(request):
     This view handles AJAX requests to asynchronously update the
     Title and Author information on the viewer page.
     """
-    w = request.GET['wit_id']
+    w = int(request.GET['wit_id'])
     ms_title, = get_rel(w, 'is_exemplar_of')
     ms_author, = get_rel(w, 'was_created_by')
     data = {'title': ms_title, 'author': ms_author}
@@ -78,18 +78,18 @@ def metadata(request):
                 if a.show == clss.ALWAYS_SHOW:
                     for val in vals:
                         l.append((k, val))
-                else:
+                else: # show if set
                     if len(vals) == 1:
                         val, = vals
                         if val == NO_DATA_MSG:
                             continue
                     for val in vals:
                         l.append((k, val))
-    
+
     md = []
     adder(AttDisplaySetting, md)
     adder(RelDisplaySetting, md)
-    
+
     data = {'ms_name': ms_name, 'md': md}
     return render(request, "templates/metadata.html", data)
 
@@ -124,7 +124,6 @@ def manuscript(request, ms_id):
     except:
         curr_wit = -1
     
-    pth = os.path.join(conf.IMG_DIR, m.directory)
     # witnesses = None
     titles = None
     ismi_data = False
@@ -140,7 +139,8 @@ def manuscript(request, ms_id):
         'title': 'Viewing {0}'.format(m.directory),
         'witnesses': bool(m.witnesses),
         'divaserve_url': DIVASERVE_URL,
-        'iipserver_url': IIPSERVER_URL.format(pth),
+        'iipserver_url': IIPSERVER_URL,
+        'image_root': conf.IMG_DIR,
         'curr_wit': curr_wit,
         'ms_name': m.directory,
         'titles': titles,

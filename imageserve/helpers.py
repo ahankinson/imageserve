@@ -2,7 +2,6 @@ import os
 import re
 from urllib import urlopen
 from json import loads
-import imageserve.models
 from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG, CACHE_ENABLED
 from imageserve.conf import IMG_DIR
 from django.core.cache import cache
@@ -63,7 +62,7 @@ def get_keyvals(setting, iden):
     try:
         vals = setting.get_vals(iden)
     except:
-        vals = NO_DATA_MSG
+        vals = [NO_DATA_MSG]
     return (key, vals)
 
 
@@ -78,7 +77,7 @@ def get_by_ismi_id(iden):
         ent = cache.get(iden)
     if ent is None:
         u = urlopen(
-            JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(iden)
+            JSON_INTERFACE + "method=get_ent&include_content=true&id=" + str(iden)
         )
         s = u.read()
         ent = loads(s)['ent']
@@ -98,7 +97,8 @@ def get_att(ismi_id, att_name):
 def get_rel(ismi_id, rel_name):
     from imageserve.models import RelDisplaySetting
     r = RelDisplaySetting.objects.get(name=rel_name)
-    return r.get_vals(ismi_id)
+    vals = r.get_vals(ismi_id)
+    return vals
 
 
 def get_folios(wit):

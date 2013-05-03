@@ -3,10 +3,11 @@ from lxml import etree, html
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 from conf import IMG_DIR
 from imageserve.helpers import get_by_ismi_id, get_keyvals, get_name, get_rel
 from imageserve.forms import IntegerListField, FolioPagesField, FolioPages
-from imageserve.settings import NO_DATA_MSG
+from imageserve.settings import NO_DATA_MSG, CACHE_ENABLED
 from south.modelsinspector import add_introspection_rules
 
 
@@ -151,19 +152,29 @@ class RelDisplaySetting(models.Model):
         Given the id of a witness, return the values of this relation
         as they would appear in the metadata view for the witness in question.
         """
-        ent = self.ent_getter(ID)
-        matches = []
-        src_match = [r for r in ent['src_rels'] if r['name'] == self.name]
-        if src_match:
-            src_match = [get_by_ismi_id(r['tar_id']) for r in src_match]
-            matches += [get_name(e, show_id=self.show_id) for e in src_match]
-        tar_match = [r for r in ent['tar_rels'] if r['name'] == self.name]
-        if tar_match:
-            tar_match = [get_by_ismi_id(r['src_id']) for r in tar_match]
-            matches += [get_name(e, show_id=self.show_id) for e in tar_match]
-        if not matches:
-            matches = [NO_DATA_MSG]
-        return matches
+        if CACHE_ENABLED:
+            vals = cache.get('rels', {}).get(ID, {}).get(self.name)
+        if vals is None:
+            ent = self.ent_getter(ID)
+            vals = []
+            src_match = [r for r in ent['src_rels'] if r['name'] == self.name]
+            if src_match:
+                src_match = [get_by_ismi_id(r['tar_id']) for r in src_match]
+                vals += [get_name(e, show_id=self.show_id) for e in src_match]
+            tar_match = [r for r in ent['tar_rels'] if r['name'] == self.name]
+            if tar_match:
+                tar_match = [get_by_ismi_id(r['src_id']) for r in tar_match]
+                vals += [get_name(e, show_id=self.show_id) for e in tar_match]
+            if not vals:
+                vals = [NO_DATA_MSG]
+            if CACHE_ENABLED:
+                d = cache.get('rels', {})
+                if ID in d:
+                    d[ID].update(rel_name=vals)
+                else:
+                    d[ID] = {self.name: vals}
+                cache.set('rels', d)
+        return vals
 
     def __unicode__(self):
         return unicode(self.name)

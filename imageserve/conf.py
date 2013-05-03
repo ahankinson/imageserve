@@ -1,4 +1,3 @@
-
 IMG_DIR = "/Users/jamieklassen/Documents/Code/imageserve/images/"
 APP_ROOT = "/"
 MEMCACHED_ENABLED = True
