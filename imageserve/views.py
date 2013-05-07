@@ -11,7 +11,8 @@ from django.template import Template, Context
 from django.contrib.auth.views import logout
 from django.forms import ValidationError
 from imageserve import img_server
-from imageserve.helpers import get_keyvals, get_folios, get_att, get_rel
+from imageserve.helpers import get_keyvals, get_folios, get_att
+from imageserve.helpers import get_rel, get_by_ismi_id, get_name
 from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
 from imageserve.settings import NO_DATA_MSG, DIVASERVE_URL, IIPSERVER_URL
 from guardian.shortcuts import get_objects_for_user, get_perms
@@ -68,8 +69,9 @@ def metadata(request):
     """
     This view serves the metadata window.
     """
-    w = int(request.GET['wit_id'])
-    ms_name = request.GET['ms_name']
+    w = int(request.GET['id'])
+    ent = get_by_ismi_id(w)
+    title = get_name(ent)
     
     def adder(clss, l):
         for a in clss.objects.all():
@@ -90,7 +92,7 @@ def metadata(request):
     adder(AttDisplaySetting, md)
     adder(RelDisplaySetting, md)
 
-    data = {'ms_name': ms_name, 'md': md}
+    data = {'title': title, 'md': md}
     return render(request, "templates/metadata.html", data)
 
 
@@ -129,14 +131,18 @@ def manuscript(request, ms_id):
     ismi_data = False
     
     if m.ismi_id is not None:
+        codex_title = get_name(get_by_ismi_id(m.ismi_id))
         ismi_data = True
         if m.witnesses:
             if not curr_wit in m.witnesses:
                 curr_wit = -1
-            titles = [(w, get_rel(w, 'is_exemplar_of')[0]) for w in m.witnesses]
+            titles = [(w, get_rel(w, 'is_exemplar_of')[0], get_att(w, 'folios'))
+                      for w in m.witnesses]
+    else:
+        codex_title = m.directory
     
     data = {
-        'title': 'Viewing {0}'.format(m.directory),
+        'ms_title': codex_title,
         'witnesses': bool(m.witnesses),
         'divaserve_url': DIVASERVE_URL,
         'iipserver_url': IIPSERVER_URL,
@@ -146,6 +152,7 @@ def manuscript(request, ms_id):
         'titles': titles,
         'ismi_data': ismi_data,
         'ms_id': ms_id,
+        'ismi_id': m.ismi_id,
         'path': quote_plus(request.get_full_path()),
         'num_files': m.num_files,
     }

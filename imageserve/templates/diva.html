@@ -1,7 +1,7 @@
 {% extends 'main.html' %}
 
 {% block title %}
-    {{ title }}
+    Imageserve - Viewing {{ ms_title }}
 {% endblock %}
 
 {% block header %}
@@ -37,32 +37,11 @@
         {% endif %}
 
         var updateWitness = function (nextWit) {
+            $("#w" + String(currWit))
+                .css({'background-color': '#ffffff'});
             currWit = nextWit;
-            // $("#myModalBody").html("Loading Metadata...");
-            $("#witness-title").html("Loading Witness Title...");
-            $("#witness-author").html("Loading Witness Author...");
-            if (nextWit != -1) {
-                $("#title-select").val(nextWit);
-                $.ajax({
-                    url: '/title_author',
-                    context: document.body,
-                    data: {'wit_id': nextWit},
-                    beforeSend: function (xhr) {
-                        xhr.overrideMimeType("text/json");
-                    },
-                }).done(function (data, textStatus, jqXHR) {
-                    $("#witness-title").html(data['title']);
-                    $("#witness-author").html(data['author']);
-                });
-            } else {
-                // $("#myModalBody").html(
-                //     "No witness has been identified for this page."
-                // );
-                $("#witness-title").html(
-                    "No witness has been identified for this page."
-                );
-                $("#witness-author").html("");
-            }
+            $("#w" + String(currWit))
+                .css({'background-color': '#f5f5f5'});
         };
     {% endif %}
     $(document).ready(function () {
@@ -110,14 +89,6 @@
                                    dv.gotoPageByNumber(data);
                                });
                 }
-                $("#title-select").change(function () {
-                    var val = $("#title-select").val();
-                    updateWitness(val);
-                    pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
-                               function (data) {
-                                   dv.gotoPageByNumber(data);
-                               });
-                });
                 $("#1-diva-goto-page").submit( function () {
                     input = $("#1-diva-goto-page-input").val();
                     $.ajax({
@@ -140,8 +111,25 @@
                 });
             });
             $("#md-button").click( function () {
-                    var url = '/metadata?wit_id=' + currWit + '&ms_name={{ms_name}}';
+                    var url = '/metadata?id=' + {{ ismi_id }};
                     window.open(url, "_blank");
+                }
+            );
+            $("tr.witness .btn").click( function () {
+                    var wit = $(this).parentsUntil(".witness").parent().attr('id');
+                    wit = wit.substring(1);
+                    var url = '/metadata?id=' + wit;
+                    window.open(url, "_blank");
+                }
+            );
+            $("tr.witness .goto-wit").click( function () {
+                    var wit = $(this).parentsUntil(".witness").parent().attr('id');
+                    wit = wit.substring(1);
+                    updateWitness(wit);
+                    pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
+                               function (data) {
+                                   dv.gotoPageByNumber(data);
+                               });
                 }
             );
             {% if perms.manuscript.can_change %}
@@ -289,19 +277,33 @@
     <div class="span3">
         {% if ismi_data %}
             {% if witnesses %}
-                <h3 id="witness-title">Witness Title</h3>
-                <h4 id="witness-author">Witness Author</h4>
+                <h3 id="ms-title">{{ ms_title }}</h3>
                 <dl id="witness-tools">
+                    <dd>
+                        <a href="#" role="button" class="btn" id="md-button">
+                            Show Codex Info
+                        </a>
+                    </dd>
                     <dt>Titles in this Codex</dt>
                     <dd>
-                        <select id="title-select">
-                            {% for i,title in titles %}
-                            <option value={{i}}>{{title}}</option>
+                        <table class="table table-bordered table-condensed">
+                            <tr>
+                                <th>Title</th>
+                                <th>Folios</th>
+                            </tr>
+                            {% for i,title,folios in titles %}
+                                <tr id="w{{i}}" class="witness">
+                                    <td>
+                                        <a href="#" class="goto-wit">{{ title }}</a>
+                                        <br />
+                                        <a href="#" role="button" class="btn">
+                                            Show Metadata
+                                        </a>
+                                    </td>
+                                    <td>{{ folios }}</td>
+                                </tr>
                             {% endfor %}
-                        </select>
-                        <a href="#" role="button" class="btn" id="md-button">
-                            Show Witness Info
-                        </a>
+                        </table>
                     </dd>
                     <dd>Current Folio: <strong id="curr-folio"></strong></dd>
                     {% if perms.manuscript.can_change %}

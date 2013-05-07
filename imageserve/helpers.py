@@ -77,7 +77,8 @@ def get_by_ismi_id(iden):
         ent = cache.get(iden)
     if ent is None:
         u = urlopen(
-            JSON_INTERFACE + "method=get_ent&include_content=true&id=" + str(iden)
+            "{0}method=get_ent&include_content=true&id={1}"
+            .format(JSON_INTERFACE, iden)
         )
         s = u.read()
         ent = loads(s)['ent']
@@ -122,8 +123,9 @@ def register_defs():
     u = urlopen(JSON_INTERFACE+"method=get_defs")
     defs = loads(u.read())['defs']
     u.close()
-    witness_def = [d for d in defs if d.get('ov') == 'WITNESS'][0]
-    text_def = [d for d in defs if d.get('ov') == 'TEXT'][0]
+    witness_def, = [d for d in defs if d.get('ov') == 'WITNESS']
+    text_def, = [d for d in defs if d.get('ov') == 'TEXT']
+    codex_def, = [d for d in defs if d.get('ov') == 'CODEX']
 
     for att in witness_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
@@ -133,6 +135,11 @@ def register_defs():
     for att in text_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
             sett = AttDisplaySetting(name=att['ov'], on_ent='is_exemplar_of')
+            sett.save()
+
+    for att in codex_def['atts']:
+        if not AttDisplaySetting.objects.filter(name=att['ov']):
+            sett = AttDisplaySetting(name=att['ov'], on_ent='self')
             sett.save()
 
     for rel in witness_def['src_rels']:
@@ -145,6 +152,11 @@ def register_defs():
             sett = RelDisplaySetting(name=rel['name'], on_ent='is_exemplar_of')
             sett.save()
 
+    for rel in codex_def['src_rels']:
+        if not RelDisplaySetting.objects.filter(name=rel['name']):
+            sett = RelDisplaySetting(name=rel['name'], on_ent='self')
+            sett.save()
+
     for rel in witness_def['tar_rels']:
         if not RelDisplaySetting.objects.filter(name=rel['name']):
             sett = RelDisplaySetting(name=rel['name'], on_ent='self')
@@ -153,6 +165,11 @@ def register_defs():
     for rel in text_def['tar_rels']:
         if not RelDisplaySetting.objects.filter(name=rel['name']):
             sett = RelDisplaySetting(name=rel['name'], on_ent='is_exemplar_of')
+            sett.save()
+
+    for rel in codex_def['tar_rels']:
+        if not RelDisplaySetting.objects.filter(name=rel['name']):
+            sett = RelDisplaySetting(name=rel['name'], on_ent='self')
             sett.save()
 
 
