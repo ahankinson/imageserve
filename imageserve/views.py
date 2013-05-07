@@ -216,6 +216,8 @@ def page_for_folio(request):
     folio = request.GET.get('folio')
     folio_pgs = get_curr_folio_pgs(request)
     page = folio_pgs.get_page(folio)
+    if page is None:
+        page = int(page)
     return HttpResponse(dumps(page), mimetype="text/json")
 
 

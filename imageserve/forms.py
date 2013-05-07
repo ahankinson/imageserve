@@ -75,7 +75,7 @@ class FolioPages(object):
         that folio number occurs.
         """
         if folio.isdigit():
-            return int(folio)
+            folio = '{0}a'.format(folio)
         for v in self._folio_pages.itervalues():
             if folio in v:
                 return min(k for k,v in self._folio_pages.iteritems() if folio in v)
