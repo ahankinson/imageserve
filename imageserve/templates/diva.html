@@ -72,16 +72,17 @@
         var dv = $("#diva-wrapper").data("diva");
         {% if witnesses %}
             $("#diva-wrapper").one("ajaxComplete", function () {
-                var currPage = dv.getCurrentPage() + 1;
-                witForPage({'ms_id':{{ms_id}},
-                            'page': currPage},
-                            function (data) {
-                                if (currWit != data[1]) {
-                                    updateWitness(data[1]);
-                                }
-                                $("#curr-folio").html(data[0]);
-                            });
-                if (currWit != -1) {
+                if (currWit == -1) {
+                    var currPage = dv.getCurrentPage() + 1;
+                    witForPage({'ms_id':{{ms_id}},
+                                'page': currPage},
+                                function (data) {
+                                    if (currWit != data[1]) {
+                                        updateWitness(data[1]);
+                                    }
+                                    $("#curr-folio").html(data[0]);
+                                });
+                } else {
                     updateWitness(currWit);
                     pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
                                function (data) {
