@@ -72,8 +72,8 @@
         var dv = $("#diva-wrapper").data("diva");
         {% if witnesses %}
             $("#diva-wrapper").one("ajaxComplete", function () {
-                if (currWit == -1) {
-                    var currPage = dv.getCurrentPage() + 1;
+                var currPage = dv.getCurrentPage() + 1;
+                if (currPage != 1) {
                     witForPage({'ms_id':{{ms_id}},
                                 'page': currPage},
                                 function (data) {
@@ -82,7 +82,8 @@
                                     }
                                     $("#curr-folio").html(data[0]);
                                 });
-                } else {
+                }
+                if (currWit != -1) {
                     updateWitness(currWit);
                     pageForWit({'ms_id': {{ms_id}}, 'wit': currWit},
                                function (data) {
