@@ -214,10 +214,11 @@ def page_for_folio(request):
     the first page with the given folio number.
     """
     folio = request.GET.get('folio')
-    folio_pgs = get_curr_folio_pgs(request)
-    page = folio_pgs.get_page(folio)
-    if page is None:
+    if folio.isdigit():
         page = int(folio)
+    else:
+        folio_pgs = get_curr_folio_pgs(request)
+        page = folio_pgs.get_page(folio)
     return HttpResponse(dumps(page), mimetype="text/json")
 
 
