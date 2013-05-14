@@ -68,7 +68,7 @@ class FolioPages(object):
             folios_list = [[] for _ in range(num_pages)]
         gen = enumerate(folios_list, start=1)
         self._folio_pages = dict(gen)
-    
+
     def get_page(self, folio):
         """
         Given a folio number in string form, return the first page on which
@@ -79,16 +79,20 @@ class FolioPages(object):
         for v in self._folio_pages.itervalues():
             if folio in v:
                 return min(k for k,v in self._folio_pages.iteritems() if folio in v)
-    
+
     def interpolate_after(self, page, **kwargs):
         """
         Given a page on which a folio number has been chosen, start
         counting and assigning folio numbers to the subsequent pages until
         another page for which a folio number has been chosen is reached.
-        
+
         The optional keyword argument `overwrite` allows you to set ALL the
         folio numbers after the selected page in this manner, regardless
         of whether those pages have folio numbers chosen or not.
+
+        If the page specified does not have a folio number, does nothing,
+        unless the `overwrite` keyword is set. If this is the case, all of
+        the folio numbers at or after the specified page will be removed.
         """
         overwrite = kwargs.get('overwrite', False)
         if self._folio_pages[page]:
@@ -100,9 +104,10 @@ class FolioPages(object):
                         return
                 self._folio_pages[key] = [folio]
         else:
-            msg = "Cannot interpolate without a starting point"
-            raise Exception(msg)
-    
+            if overwrite:
+                for key in range(page, len(self._folio_pages) + 1):
+                    self.clear_page(key)
+
     def get_folio(self, page):
         """
         Given a page number, returns the "earliest" folio number on that page.
@@ -110,13 +115,13 @@ class FolioPages(object):
         for i, n in zip(folios(),self._folio_pages):
             if i in self._folio_pages[page]:
                 return i
-    
+
     def clear_page(self, page):
         """
         Removes all folio numbers from the specified page.
         """
         self._folio_pages[page] = []
-    
+
     def __setitem__(self, key, value):
         """
         Sets the folio number for the chosen page. NB: after using this syntax
