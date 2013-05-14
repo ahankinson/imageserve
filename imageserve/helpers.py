@@ -129,17 +129,17 @@ def register_defs():
 
     for att in witness_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
-            sett = AttDisplaySetting(name=att['ov'], on_ent='self')
+            sett = AttDisplaySetting(name=att['ov'], on_ent='self', content_type=att['content_type'])
             sett.save()
 
     for att in text_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
-            sett = AttDisplaySetting(name=att['ov'], on_ent='is_exemplar_of')
+            sett = AttDisplaySetting(name=att['ov'], on_ent='is_exemplar_of', content_type=att['content_type'])
             sett.save()
 
     for att in codex_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
-            sett = AttDisplaySetting(name=att['ov'], on_ent='self')
+            sett = AttDisplaySetting(name=att['ov'], on_ent='self', content_type=att['content_type'])
             sett.save()
 
     for rel in witness_def['src_rels']:
