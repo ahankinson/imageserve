@@ -1,4 +1,5 @@
 import os
+import unicodedata
 from lxml import etree, html
 from django.db import models
 from django.contrib.auth.models import User
@@ -63,6 +64,7 @@ class AttDisplaySetting(models.Model):
     display_name = models.CharField(max_length=200, null=True)
     show = models.IntegerField(choices=SHOW_CHOICES, default=ALWAYS_SHOW)
     on_ent = models.CharField(max_length=200, editable=False)
+    content_type = models.CharField(max_length=200, editable=False)
 
     def ent_getter(self, ID):
         """
@@ -91,6 +93,14 @@ class AttDisplaySetting(models.Model):
         if match:
             val = match[0].get('ov')
             if val is not None:
+                arabic = False
+                if self.content_type == 'arabic':
+                    arabic = True
+                elif isinstance(val, basestring):
+                    if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ','')):
+                        arabic = True
+                if arabic:
+                    val = u'<p dir=\"RTL\">{0}</p>'.format(val)
                 if self.name == 'table_of_contents':
                     root = html.fromstring(val)
                     for a in root.xpath('.//a[@href]'):
@@ -174,6 +184,10 @@ class RelDisplaySetting(models.Model):
                 else:
                     d[ID] = {self.name: vals}
                 cache.set('rels', d)
+        for i, val in enumerate(vals):
+            if isinstance(val, basestring):
+                if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ','')):
+                    vals[i] = u'<p dir=\"RTL\">{0}</p>'.format(val)
         return vals
 
     def __unicode__(self):
