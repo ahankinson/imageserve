@@ -39,9 +39,13 @@ CACHES = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'database.sqlite3',                      # Or path to database file if using sqlite3.
-    }
+        'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'imageserve_app',
+        'USER': 'imageserve_app',
+        'PASSWORD': 'imageserve',
+        'HOST': 'localhost',
+        'PORT': '5432'
+   }
 }
 
 # Local time zone for this installation. Choices can be found here:
