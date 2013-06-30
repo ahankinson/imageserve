@@ -5,8 +5,8 @@ import os
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 JSON_INTERFACE = "https://openmind-ismi-dev.mpiwg-berlin.mpg.de/om4-ismi/jsonInterface?"
-DIVASERVE_URL = "http://localhost:8000/divaserve"
-IIPSERVER_URL = "http://localhost:8080/fcgi-bin/iipsrv.fcgi"
+DIVASERVE_URL = "https://images.rasi.mcgill.ca/divaserve"
+IIPSERVER_URL = "https://images.rasi.mcgill.ca/fcgi-bin/iipsrv.fcgi"
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -128,7 +128,17 @@ TEMPLATE_LOADERS = (
     # 'django.template.loaders.eggs.Loader',
 )
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.contrib.auth.context_processors.auth",
+    "django.core.context_processors.debug",
+    "django.core.context_processors.i18n",
+    "django.core.context_processors.media",
+    'django.core.context_processors.static',
+    "django.core.context_processors.request"
+)
+
 MIDDLEWARE_CLASSES = (
+    'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -136,6 +146,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware'
 )
 
 
