@@ -1,5 +1,3 @@
-import os
-import re
 import conf
 from json import dumps
 from django.http import HttpResponse, Http404
@@ -7,17 +5,18 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from urllib import quote_plus
 from django.contrib.auth.decorators import login_required
-from django.template import Template, Context
 from django.contrib.auth.views import logout
-from django.forms import ValidationError
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.decorators.cache import never_cache
 from imageserve import img_server
 from imageserve.helpers import get_keyvals, get_folios, get_att
 from imageserve.helpers import get_rel, get_by_ismi_id, get_name
 from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
 from imageserve.settings import NO_DATA_MSG, DIVASERVE_URL, IIPSERVER_URL
-from guardian.shortcuts import get_objects_for_user, get_perms
+from guardian.shortcuts import get_objects_for_user
 
 
+@never_cache
 def main(request):
     """The main view, where users can browse available manuscripts."""
     if request.user.is_anonymous():
@@ -28,15 +27,26 @@ def main(request):
         show_all = request.GET.get('show_all', False)
         if show_all:
             show_all = bool(int(show_all))
-    
+
     manuscript_groups = get_objects_for_user(u, 'imageserve.view_manuscript_group')
-    manuscripts = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups)
+    msf = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups)
+
     if not show_all:
         # this assumes the existence of a manuscriptgroup called "Stabi Codices"...
         stabi = ManuscriptGroup.objects.filter(name="Stabi Codices")
-        manuscripts = manuscripts.filter(manuscriptgroup__in=stabi)
-    manuscripts = manuscripts.distinct()
-    
+        msf = msf.filter(manuscriptgroup__in=stabi)
+
+    ms = msf.distinct()
+    paginator = Paginator(ms, 25)
+    page = request.GET.get('page')
+
+    try:
+        manuscripts = paginator.page(page)
+    except PageNotAnInteger:
+        manuscripts = paginator.page(1)
+    except EmptyPage:
+        manuscripts = paginator.page(paginator.num_pages)
+
     data = {
         'manuscripts': manuscripts,
         'title': 'Available Manuscripts',
@@ -51,6 +61,33 @@ def diva(request):
     msdir = request.GET.get('d')
     js = img_server.getc(msdir)
     return HttpResponse(dumps(js), content_type="application/json")
+
+
+@never_cache
+def search(request):
+    if request.user.is_anonymous():
+        u = User.objects.get(pk=-1)  # select the "AnonymousUser" object
+        show_all = False
+    else:
+        u = request.user
+        show_all = request.GET.get('show_all', False)
+        if show_all:
+            show_all = bool(int(show_all))
+
+    manuscript_groups = get_objects_for_user(u, 'imageserve.view_manuscript_group')
+    # msf = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups)
+
+    q = request.GET.get('q', None)
+    m = Manuscript.objects.filter(directory__icontains=q, manuscriptgroup__in=manuscript_groups).distinct().values_list('directory', flat=True)
+    js = list(m)
+    return HttpResponse(dumps(js), content_type="application/json")
+
+
+@never_cache
+def goto(request):
+    q = request.GET.get('q', None)
+    m = Manuscript.objects.get(directory=q)
+    return HttpResponse(dumps({'codex': m.id}), content_type="application/json")
 
 
 def title_author(request):
@@ -72,7 +109,7 @@ def metadata(request):
     w = int(request.GET['id'])
     ent = get_by_ismi_id(w)
     title = get_name(ent)
-    
+
     def adder(clss, l):
         for a in clss.objects.all():
             if a.show != clss.NEVER_SHOW:
@@ -80,7 +117,7 @@ def metadata(request):
                 if a.show == clss.ALWAYS_SHOW:
                     for val in vals:
                         l.append((k, val))
-                else: # show if set
+                else:  # show if set
                     if len(vals) == 1:
                         val, = vals
                         if val == NO_DATA_MSG:
@@ -102,34 +139,34 @@ def manuscript(request, ms_id):
         u = User.objects.get(pk=-1)  # select the "AnonymousUser" object
     else:
         u = request.user
-    
+
     # We break the response down into a couple steps here.
     # First, check the number of manuscripts groups they have permissions to. This is just to
     # be able to exit with a 404 if they're trying to access a manuscript in a group that doesn't exist.
-    
+
     # Then, we check against the manuscripts themselves. This allows us to catch the user and redirect them
     # to a log in page if they need to log in to see the MSS.
     manuscript_groups = get_objects_for_user(u, 'imageserve.view_manuscript_group')
     manuscripts = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups).distinct()
     if not manuscripts.exists():
         raise Http404
-    
+
     has_permission = manuscripts.filter(id=ms_id)
-    
+
     if manuscripts and not has_permission.exists():
         return redirect('/login/?next={0}'.format(request.path))
-    
+
     m = has_permission[0]
     curr_wit = request.GET.get('curr_wit')
     try:
         curr_wit = int(curr_wit)
     except:
         curr_wit = -1
-    
+
     # witnesses = None
     titles = None
     ismi_data = False
-    
+
     if m.ismi_id is not None:
         codex_title = get_name(get_by_ismi_id(m.ismi_id))
         ismi_data = True
@@ -140,7 +177,7 @@ def manuscript(request, ms_id):
                       for w in m.witnesses]
     else:
         codex_title = m.directory
-    
+
     data = {
         'ms_title': codex_title,
         'witnesses': bool(m.witnesses),
@@ -272,6 +309,7 @@ def set_folio(request):
     set_curr_folio_pgs(request, folio_pgs)
     return HttpResponse(dumps(folio), mimetype="text/json")
 
+
 @login_required
 def interpolate_after(request):
     """
@@ -285,6 +323,7 @@ def interpolate_after(request):
     folio_pgs.interpolate_after(page, overwrite=overwrite)
     set_curr_folio_pgs(request, folio_pgs)
     return HttpResponse()
+
 
 @login_required
 def save_folios(request):
@@ -303,6 +342,7 @@ def save_folios(request):
         msg = 'An error occurred and your changes could not be saved:\n{0}'
         return HttpResponse(dumps(msg.format(e)), mimetype="text/json")
 
+
 @login_required
 def remove_folios(request):
     """
@@ -314,6 +354,7 @@ def remove_folios(request):
     folio_pgs.clear_page(page)
     set_curr_folio_pgs(request, folio_pgs)
     return HttpResponse(dumps(str(None)), mimetype="text/json")
+
 
 @login_required
 def discard_changes(request):
