@@ -43,7 +43,7 @@ def get_name(ent, **kwargs):
                                     if 'additional_information' == attr['name']:
                                         if 'ov' in attr:
                                             if attr['ov']:
-                                                ret += " {0}".format(attr['ov'])
+                                                ret += u" {0}".format(attr['ov'])
                                         break
                                 break
         if ret is None:
@@ -51,6 +51,7 @@ def get_name(ent, **kwargs):
     if show_id:
         return u"{0} (ISMI ID {1})".format(ret, ent['id'])
     return unicode(ret)
+
 
 def get_keyvals(setting, iden):
     """
@@ -75,6 +76,7 @@ def get_by_ismi_id(iden):
     ent = None
     if CACHE_ENABLED:
         ent = cache.get(iden)
+
     if ent is None:
         u = urlopen(
             "{0}method=get_ent&include_content=true&id={1}"
@@ -85,6 +87,7 @@ def get_by_ismi_id(iden):
         u.close()
         if CACHE_ENABLED:
             cache.set(iden, ent)
+
     return ent
 
 
