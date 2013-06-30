@@ -3,7 +3,7 @@ from django.conf import settings
 from django import forms
 from guardian.admin import GuardedModelAdmin
 from imageserve.helpers import register_defs, register_manuscripts
-from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
+from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting, CacheTable
 from imageserve.forms import PageRangeListFormField
 
 
@@ -40,11 +40,18 @@ class ManuscriptAdmin(GuardedModelAdmin):
 class ManuscriptGroupAdmin(GuardedModelAdmin):
     filter_horizontal = ('manuscripts',)
 
+
+class CacheTableAdmin(admin.ModelAdmin):
+    list_display = ('cache_key', 'expires')
+    search_fields = ('cache_key',)
+
 # admin.site.register(models.Manuscript, models.ManuscriptAdmin)
 admin.site.register(Manuscript, ManuscriptAdmin)
 admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
 admin.site.register(AttDisplaySetting)
 admin.site.register(RelDisplaySetting)
+admin.site.register(CacheTable, CacheTableAdmin)
+
 
 if settings.UPDATE_DEFS:
     register_defs()
