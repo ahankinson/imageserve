@@ -725,6 +725,17 @@ dd {
   margin-left: 10px;
 }
 
+dd > div > input[type="text"],
+dd > div > select,
+dd > div > .btn {
+  width: auto;
+}
+
+dd > div > .btn {
+  vertical-align: top;
+  margin-top: 2px;
+}
+
 .dl-horizontal dt {
   float: left;
   width: 120px;

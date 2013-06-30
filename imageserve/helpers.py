@@ -62,7 +62,7 @@ def get_keyvals(setting, iden):
     try:
         vals = setting.get_vals(iden)
     except:
-        vals = NO_DATA_MSG
+        vals = [NO_DATA_MSG]
     return (key, vals)
 
 
@@ -77,7 +77,8 @@ def get_by_ismi_id(iden):
         ent = cache.get(iden)
     if ent is None:
         u = urlopen(
-            JSON_INTERFACE+"method=get_ent&include_content=true&id="+str(iden)
+            "{0}method=get_ent&include_content=true&id={1}"
+            .format(JSON_INTERFACE, iden)
         )
         s = u.read()
         ent = loads(s)['ent']
@@ -97,7 +98,8 @@ def get_att(ismi_id, att_name):
 def get_rel(ismi_id, rel_name):
     from imageserve.models import RelDisplaySetting
     r = RelDisplaySetting.objects.get(name=rel_name)
-    return r.get_vals(ismi_id)
+    vals = r.get_vals(ismi_id)
+    return vals
 
 
 def get_folios(wit):
@@ -105,10 +107,10 @@ def get_folios(wit):
     Returns the folios attribute on the witness with the
     specified id.
     """
-    witness = get_by_ismi_id(wit)
-    att, = [a for a in witness['atts'] if a['name'] == 'folios']
-    folios = att.get('ov')
-    first, last = re.findall(r'(\d+[a|b]?)-(\d+[a|b]?)', folios)
+    folios = get_att(wit, 'folios')
+    if folios == NO_DATA_MSG:
+        return
+    (first, last), = re.findall(r'(\d+[a|b]?)-(\d+[a|b]?)', folios)
     return (first, last)
 
 
@@ -121,17 +123,23 @@ def register_defs():
     u = urlopen(JSON_INTERFACE+"method=get_defs")
     defs = loads(u.read())['defs']
     u.close()
-    witness_def = [d for d in defs if d.get('ov') == 'WITNESS'][0]
-    text_def = [d for d in defs if d.get('ov') == 'TEXT'][0]
+    witness_def, = [d for d in defs if d.get('ov') == 'WITNESS']
+    text_def, = [d for d in defs if d.get('ov') == 'TEXT']
+    codex_def, = [d for d in defs if d.get('ov') == 'CODEX']
 
     for att in witness_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
-            sett = AttDisplaySetting(name=att['ov'], on_ent='self')
+            sett = AttDisplaySetting(name=att['ov'], on_ent='self', content_type=att['content_type'])
             sett.save()
 
     for att in text_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
-            sett = AttDisplaySetting(name=att['ov'], on_ent='is_exemplar_of')
+            sett = AttDisplaySetting(name=att['ov'], on_ent='is_exemplar_of', content_type=att['content_type'])
+            sett.save()
+
+    for att in codex_def['atts']:
+        if not AttDisplaySetting.objects.filter(name=att['ov']):
+            sett = AttDisplaySetting(name=att['ov'], on_ent='self', content_type=att['content_type'])
             sett.save()
 
     for rel in witness_def['src_rels']:
@@ -144,6 +152,11 @@ def register_defs():
             sett = RelDisplaySetting(name=rel['name'], on_ent='is_exemplar_of')
             sett.save()
 
+    for rel in codex_def['src_rels']:
+        if not RelDisplaySetting.objects.filter(name=rel['name']):
+            sett = RelDisplaySetting(name=rel['name'], on_ent='self')
+            sett.save()
+
     for rel in witness_def['tar_rels']:
         if not RelDisplaySetting.objects.filter(name=rel['name']):
             sett = RelDisplaySetting(name=rel['name'], on_ent='self')
@@ -152,6 +165,11 @@ def register_defs():
     for rel in text_def['tar_rels']:
         if not RelDisplaySetting.objects.filter(name=rel['name']):
             sett = RelDisplaySetting(name=rel['name'], on_ent='is_exemplar_of')
+            sett.save()
+
+    for rel in codex_def['tar_rels']:
+        if not RelDisplaySetting.objects.filter(name=rel['name']):
+            sett = RelDisplaySetting(name=rel['name'], on_ent='self')
             sett.save()
 
 
