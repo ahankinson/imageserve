@@ -27,13 +27,22 @@ MANAGERS = ADMINS
 
 CACHES = {
     'default': {
-        'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
-        'LOCATION': 'localhost:11211',
-        'BINARY': True,
-        'OPTIONS': {
-            'tcp_nodelay': True,
-            'ketama': True
-        }
+        #'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+        # 'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+        # 'LOCATION': [
+        #     'localhost:11211',
+        #     'localhost:11212',
+        #     'localhost:11213',
+        #     'localhost:11214',
+        #     'localhost:11215',
+        # ],
+        # 'BINARY': True,
+        # 'OPTIONS': {
+        #     'tcp_nodelay': True,
+        #     'ketama': True
+        # }
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'is_cache_table',
     }
 }
 
