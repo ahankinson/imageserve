@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
 from guardian.admin import GuardedModelAdmin
 from imageserve.helpers import register_defs, register_manuscripts
-from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting
+from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting, CacheTable
 from imageserve.forms import PageRangeListFormField
 
 
@@ -81,10 +81,20 @@ class RelSettingAdmin(admin.ModelAdmin):
     list_filter = (RelSettingListFilter,)
 
 
+
+class CacheTableAdmin(admin.ModelAdmin):
+    list_display = ('cache_key', 'expires')
+    search_fields = ('cache_key',)
+
+# admin.site.register(models.Manuscript, models.ManuscriptAdmin)
 admin.site.register(Manuscript, ManuscriptAdmin)
 admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
 admin.site.register(AttDisplaySetting, AttSettingAdmin)
 admin.site.register(RelDisplaySetting, RelSettingAdmin)
+admin.site.register(AttDisplaySetting)
+admin.site.register(RelDisplaySetting)
+admin.site.register(CacheTable, CacheTableAdmin)
+
 
 if settings.UPDATE_DEFS:
     register_defs()

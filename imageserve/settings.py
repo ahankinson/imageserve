@@ -5,8 +5,8 @@ import os
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 JSON_INTERFACE = "https://openmind-ismi-dev.mpiwg-berlin.mpg.de/om4-ismi/jsonInterface?"
-DIVASERVE_URL = "http://localhost:8000/divaserve"
-IIPSERVER_URL = "http://localhost:8080/fcgi-bin/iipsrv.fcgi"
+DIVASERVE_URL = "https://images.rasi.mcgill.ca/divaserve"
+IIPSERVER_URL = "https://images.rasi.mcgill.ca/fcgi-bin/iipsrv.fcgi"
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -27,20 +27,33 @@ MANAGERS = ADMINS
 
 CACHES = {
     'default': {
-        'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
-        'LOCATION': 'localhost:11211',
-        'BINARY': True,
-        'OPTIONS': {
-            'tcp_nodelay': True,
-            'ketama': True
-        }
+        #'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+        # 'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+        # 'LOCATION': [
+        #     'localhost:11211',
+        #     'localhost:11212',
+        #     'localhost:11213',
+        #     'localhost:11214',
+        #     'localhost:11215',
+        # ],
+        # 'BINARY': True,
+        # 'OPTIONS': {
+        #     'tcp_nodelay': True,
+        #     'ketama': True
+        # }
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'is_cache_table',
     }
 }
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'database.sqlite3',                      # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'imageserve_app',
+        'USER': 'imageserve_app',
+        'PASSWORD': 'imageserve',
+        'HOST': 'localhost',
+        'PORT': '5432'
     }
 }
 
@@ -102,7 +115,7 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -112,10 +125,20 @@ SECRET_KEY = 't9vz!s()ix87g4+g%ji!c%w8997os$gz3yib%kwiwv+_-p&amp;f@('
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
+    # 'django.template.loaders.eggs.Loader',
+)
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.contrib.auth.context_processors.auth",
+    "django.core.context_processors.debug",
+    "django.core.context_processors.i18n",
+    "django.core.context_processors.media",
+    'django.core.context_processors.static',
+    "django.core.context_processors.request"
 )
 
 MIDDLEWARE_CLASSES = (
+    'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -123,7 +146,9 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware'
 )
+
 
 ROOT_URLCONF = 'imageserve.urls'
 
@@ -147,6 +172,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django_extensions',
+    'bootstrap-pagination',
     'south',
     'guardian',
     'imageserve',

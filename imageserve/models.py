@@ -2,11 +2,10 @@ import os
 import unicodedata
 from lxml import etree, html
 from django.db import models
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from conf import IMG_DIR
-from imageserve.helpers import get_by_ismi_id, get_keyvals, get_name, get_rel
+from imageserve.helpers import get_by_ismi_id, get_name, get_rel
 from imageserve.forms import IntegerListField, FolioPagesField, FolioPages
 from imageserve.settings import NO_DATA_MSG, CACHE_ENABLED
 from south.modelsinspector import add_introspection_rules
@@ -102,7 +101,7 @@ class AttDisplaySetting(models.Model):
                 if self.content_type == 'arabic':
                     arabic = True
                 elif isinstance(val, basestring):
-                    if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ','')):
+                    if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ', '')):
                         arabic = True
                 if arabic:
                     val = u'<p dir=\"RTL\">{0}</p>'.format(val)
@@ -172,8 +171,10 @@ class RelDisplaySetting(models.Model):
         Given the id of a witness, return the values of this relation
         as they would appear in the metadata view for the witness in question.
         """
+        vals = None
         if CACHE_ENABLED:
             vals = cache.get('rels', {}).get(ID, {}).get(self.name)
+
         if vals is None:
             ent = self.ent_getter(ID)
             vals = []
@@ -196,7 +197,7 @@ class RelDisplaySetting(models.Model):
                 cache.set('rels', d)
         for i, val in enumerate(vals):
             if isinstance(val, basestring):
-                if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ','')):
+                if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ', '')):
                     vals[i] = u'<p dir=\"RTL\">{0}</p>'.format(val)
         return vals
 
@@ -279,3 +280,13 @@ class ManuscriptGroup(models.Model):
 
     def __unicode__(self):
         return unicode(self.name)
+
+
+class CacheTable(models.Model):
+    """docstring for CacheTable"""
+    cache_key = models.CharField(max_length=255, primary_key=True)
+    value = models.TextField()
+    expires = models.DateTimeField(null=True, blank=True, default=None)
+
+    class Meta:
+        db_table = "is_cache_table"
