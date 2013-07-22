@@ -129,22 +129,23 @@ def register_defs():
 
     for att in witness_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
-            sett = AttDisplaySetting(name=att['ov'], on_ent='self', content_type=att['content_type'])
+            sett = AttDisplaySetting(name=att['ov'], on_ent='self', content_type=att['content_type'], oc='WITNESS')
             sett.save()
 
     for att in text_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
-            sett = AttDisplaySetting(name=att['ov'], on_ent='is_exemplar_of', content_type=att['content_type'])
+            sett = AttDisplaySetting(name=att['ov'], on_ent='is_exemplar_of', content_type=att['content_type'], oc='TEXT')
             sett.save()
 
     for att in codex_def['atts']:
         if not AttDisplaySetting.objects.filter(name=att['ov']):
-            sett = AttDisplaySetting(name=att['ov'], on_ent='self', content_type=att['content_type'])
+            sett = AttDisplaySetting(name=att['ov'], on_ent='self', content_type=att['content_type'], oc='CODEX')
             sett.save()
 
     for rel in witness_def['src_rels']:
         if not RelDisplaySetting.objects.filter(name=rel['name']) and rel['name'] != 'was_created_by':
-            sett = RelDisplaySetting(name=rel['name'], on_ent='self')
+            tar_oc, = [d for d in defs if d.get('id') == rel['tar_id']]
+            sett = RelDisplaySetting(name=rel['name'], on_ent='self', src_oc='WITNESS', tar_oc=tar_oc)
             sett.save()
 
     for rel in text_def['src_rels']:

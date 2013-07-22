@@ -46,6 +46,7 @@ class IsmiIdField(models.IntegerField):
 
 
 # MODELS
+
 class AttDisplaySetting(models.Model):
     """
     Global object in the database which holds the
@@ -65,6 +66,10 @@ class AttDisplaySetting(models.Model):
     show = models.IntegerField(choices=SHOW_CHOICES, default=ALWAYS_SHOW)
     on_ent = models.CharField(max_length=200, editable=False)
     content_type = models.CharField(max_length=200, editable=False)
+    oc = models.CharField(max_length=200, editable=False)
+    
+    class Meta:
+        unique_together = ('name', 'oc')
 
     def ent_getter(self, ID):
         """
@@ -120,13 +125,13 @@ class AttDisplaySetting(models.Model):
             self.display_name = self.name
         super(AttDisplaySetting, self).save(*args, **kwargs)
 
-
 class RelDisplaySetting(models.Model):
     """
     Global object in the database which holds the
     settings for whether and how a certain ISMI
-    relation (on either a Manuscipt's associated
-    WITNESS or the TEXT it is exemplar of) should
+    relation (on either a Manuscript's associated
+    CODEX, one of the WITNESSes contained therein or
+    the TEXT it is exemplar of) should
     be displayed in the Metadata view.
     """
     ALWAYS_SHOW = 0
@@ -140,6 +145,11 @@ class RelDisplaySetting(models.Model):
     display_name = models.CharField(max_length=200, null=True)
     show = models.IntegerField(choices=SHOW_CHOICES, default=ALWAYS_SHOW)
     on_ent = models.CharField(max_length=200, editable=False)
+    src_oc = models.CharField(max_length=200, editable=False)
+    tar_oc = models.CharField(max_length=200, editable=False)
+
+    class Meta:
+        unique_together = ('src_oc', 'name', 'tar_oc')
 
     def ent_getter(self, ID):
         """
@@ -195,7 +205,7 @@ class RelDisplaySetting(models.Model):
 
     def save(self, *args, **kwargs):
         if self.display_name is None:
-            self.display_name = self.name
+            self.display_name = u'{0} {1} {2}'.format(self.src_oc, self.name, self.tar_oc)
         super(RelDisplaySetting, self).save(*args, **kwargs)
 
 
@@ -210,7 +220,7 @@ class Manuscript(models.Model):
     witnesses = IntegerListField(editable=False)
     has_folio_nums = models.BooleanField(default=True)
     folio_pgs = FolioPagesField(editable=False, null=True)
-    
+
     class Meta:
         ordering = ['directory']
 
