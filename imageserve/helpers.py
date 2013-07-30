@@ -147,7 +147,7 @@ def register_defs():
 
     for rel in witness_def['src_rels']:
         if not RelDisplaySetting.objects.filter(name=rel['name']) and rel['name'] != 'was_created_by':
-            tar_oc, = [d for d in defs if d.get('id') == rel['tar_id']]
+            tar_oc, = [d['ov'] for d in defs if d.get('id') == rel['tar_id']]
             sett = RelDisplaySetting(name=rel['name'], on_ent='self', src_oc='WITNESS', tar_oc=tar_oc)
             sett.save()
 

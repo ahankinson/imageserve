@@ -1,5 +1,4 @@
 # Django settings for imageserve project.
-import imageserve
 import os
 
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))

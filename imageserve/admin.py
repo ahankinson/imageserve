@@ -10,11 +10,11 @@ from imageserve.forms import PageRangeListFormField
 
 
 class ManuscriptAdminForm(forms.ModelForm):
-    '''
+    """
     Custom admin form to take care of dynamically generating
     the form widget corresponding to the page numbers of the
     witnesses in a codex.
-    '''
+    """
     class Meta:
         model = Manuscript
 
@@ -68,18 +68,19 @@ class RelSettingListFilter(admin.SimpleListFilter):
     parameter_name = 'oc'
 
     def lookups(self, request, model_admin):
-        qs = model_admin.get_queryset(request)
+        qs = model_admin.queryset(request)
         return tuple(
-            (oc, _(oc)) for oc in sorted(set(m.oc for m in qs))
+            (oc, oc) for oc in sorted(set(m.tar_oc for m in qs).union(set(m.src_oc for m in qs)))
         )
 
     def queryset(self, request, queryset):
-        return queryset.filter(Q(tar_oc=self.value()) | Q(src_oc=self.value()))
+        if self.value():
+            return queryset.filter(Q(tar_oc=self.value()) | Q(src_oc=self.value()))
+        return queryset
 
 
 class RelSettingAdmin(admin.ModelAdmin):
     list_filter = (RelSettingListFilter,)
-
 
 
 class CacheTableAdmin(admin.ModelAdmin):
@@ -91,8 +92,6 @@ admin.site.register(Manuscript, ManuscriptAdmin)
 admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
 admin.site.register(AttDisplaySetting, AttSettingAdmin)
 admin.site.register(RelDisplaySetting, RelSettingAdmin)
-admin.site.register(AttDisplaySetting)
-admin.site.register(RelDisplaySetting)
 admin.site.register(CacheTable, CacheTableAdmin)
 
 
