@@ -5,6 +5,7 @@ Werkzeug==0.9.1
 -e git+https://github.com/django-extensions/django-extensions.git@ad9dcbee9cce0aae40c09e8c253277650a4643e7#egg=django_extensions-dev
 django-guardian==1.1.0.beta
 django-pylibmc==0.5.0
+django-bootstrap-pagination==0.1.11
 eventlet==0.12.1
 ## FIXME: could not find svn URL in dependency_links for this package:
 flup==1.0.3.dev-20110405
