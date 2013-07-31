@@ -1,10 +1,11 @@
+from urllib import urlopen
+from json import loads
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from imageserve.models import Manuscript
 from imageserve.settings import JSON_INTERFACE
-from urllib import urlopen
-from json import loads
 from stabi_codices import STABI_CODICES
-import os
+
 
 class Command(BaseCommand):
     help = 'Updates as many ISMI IDs for Stabi codices as possible'
@@ -31,7 +32,7 @@ class Command(BaseCommand):
                     ms.clean()
                     ms.save()
                     print 'done.'
-                except:
+                except ValidationError:
                     print directory, 'failed.'
                     continue
             else:

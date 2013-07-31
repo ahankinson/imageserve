@@ -6,13 +6,13 @@ import re
 from json import loads, dumps
 
 
-add_introspection_rules([], ["^imageserve\.forms\.IntegerListField"])
-add_introspection_rules([], ["^imageserve\.forms\.PageRangeListField"])
-add_introspection_rules([], ["^imageserve\.forms\.PageRangeFormField"])
-add_introspection_rules([], ["^imageserve\.forms\.PageRangeWidget"])
-add_introspection_rules([], ["^imageserve\.forms\.PageRangeListFormField"])
-add_introspection_rules([], ["^imageserve\.forms\.PageRangeListWidget"])
-add_introspection_rules([], ["^imageserve\.forms\.FolioPagesField"])
+add_introspection_rules([], ['^imageserve\.forms\.IntegerListField'])
+add_introspection_rules([], ['^imageserve\.forms\.PageRangeListField'])
+add_introspection_rules([], ['^imageserve\.forms\.PageRangeFormField'])
+add_introspection_rules([], ['^imageserve\.forms\.PageRangeWidget'])
+add_introspection_rules([], ['^imageserve\.forms\.PageRangeListFormField'])
+add_introspection_rules([], ['^imageserve\.forms\.PageRangeListWidget'])
+add_introspection_rules([], ['^imageserve\.forms\.FolioPagesField'])
 
 
 class PageRange(object):
@@ -34,20 +34,21 @@ class PageRangeList(object):
 
 
 def folios(**kwargs):
-   """
-   Generator for folio numbers. Optional keyword argument `start`
-   lets you specify a different start point, non-inclusive. Must be a
-   valid folio number, or else stuff will break.
-   """
-   suffixes = {True: 'a', False: 'b'}
-   unsuff = dict((v,k) for k,v in suffixes.items())
-   start = kwargs.get('start', '0b')
-   for k, suff in re.findall(r'(\d+)(a|b)', start): pass
-   k = int(k)
-   while True:
-       if not unsuff[suff]: k += 1
-       suff = suffixes[not unsuff[suff]]
-       yield str(k)+suff
+    """
+    Generator for folio numbers. Optional keyword argument `start`
+    lets you specify a different start point, non-inclusive. Must be a
+    valid folio number, or else stuff will break.
+    """
+    suffixes = {True: 'a', False: 'b'}
+    unsuff = dict((v, k) for k, v in suffixes.items())
+    start = kwargs.get('start', '0b')
+    for k, suff in re.findall(r'(\d+)(a|b)', start):
+        pass
+    k = int(k)
+    while True:
+        if not unsuff[suff]: k += 1
+        suff = suffixes[not unsuff[suff]]
+        yield str(k) + suff
 
 
 class FolioPages(object):
@@ -58,12 +59,13 @@ class FolioPages(object):
     If no folio list is provided, the keyword argument
     `num_pages` is required.
     """
+
     def __init__(self, folios_list=None, **kwargs):
         if folios_list is None:
             num_pages = kwargs.get('num_pages')
             if not num_pages:
                 msg = ('If no folio list is provided, '
-                + 'keyword argument `num_pages` is required')
+                       + 'keyword argument `num_pages` is required')
                 raise Exception(msg)
             folios_list = [[] for _ in range(num_pages)]
         gen = enumerate(folios_list, start=1)
@@ -78,7 +80,7 @@ class FolioPages(object):
             folio = '{0}a'.format(folio)
         for v in self._folio_pages.itervalues():
             if folio in v:
-                return min(k for k,v in self._folio_pages.iteritems() if folio in v)
+                return min(k for k, v in self._folio_pages.iteritems() if folio in v)
 
     def interpolate_after(self, page, **kwargs):
         """
@@ -112,7 +114,7 @@ class FolioPages(object):
         """
         Given a page number, returns the "earliest" folio number on that page.
         """
-        for i, n in zip(folios(),self._folio_pages):
+        for i, n in zip(folios(), self._folio_pages):
             if i in self._folio_pages[page]:
                 return i
 
@@ -129,26 +131,26 @@ class FolioPages(object):
         be overwritten. To avoid this, use add_folio.
         """
         self._folio_pages[key] = [value]
-    
+
     def add_folio(self, page, folio):
         """
         Adds the specified folio number to the list of folio numbers on the specified
         page.
         """
         self._folio_pages[page].append(folio)
-    
+
     def __str__(self):
         return dumps(self._folio_pages.values())
 
 
 class FolioPagesField(models.Field):
     description = ('JSON object describing the correspondence '
-    + 'between page numbers and folio numbers')
+                   + 'between page numbers and folio numbers')
     __metaclass__ = models.SubfieldBase
-    
+
     def db_type(self, connection):
         return 'char(25000)' # perhaps this is excessive...
-    
+
     def to_python(self, value):
         if isinstance(value, FolioPages):
             return value
@@ -157,10 +159,10 @@ class FolioPagesField(models.Field):
         if value:
             folios_list = loads(value)
             return FolioPages(folios_list)
-    
+
     def get_prep_value(self, value):
         return str(value)
-    
+
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
         return self.get_prep_value(value)
@@ -222,10 +224,10 @@ class PageRangeListField(models.Field):
 
     def clean(self, value, model_instance):
         for i, pages in enumerate(value):
-            for other_pages in value[i+1:]:
+            for other_pages in value[i + 1:]:
                 # Can this be simplified a bit? It's quite hard to follow.
-                if ((pages.first <= other_pages.first and other_pages.first <= pages.last) or
-                   (other_pages.first <= pages.first and pages.first <= other_pages.last)):
+                if ((pages.first <= other_pages.first <= pages.last) or
+                        (other_pages.first <= pages.first <= other_pages.last)):
                     raise forms.ValidationError('Overlapping page ranges')
         return super(PageRangeListField, self).clean(value, model_instance)
 
@@ -271,7 +273,7 @@ class PageRangeWidget(forms.MultiWidget):
 
     def format_output(self, rendered_widgets):
         w1, w2 = rendered_widgets
-        return u'<td>'+w1+u'</td><td>'+w2+'</td>'
+        return u'<td>' + w1 + u'</td><td>' + w2 + u'</td>'
 
 
 class PageRangeListFormField(forms.MultiValueField):
@@ -283,10 +285,10 @@ class PageRangeListFormField(forms.MultiValueField):
 
     def compress(self, data_list):
         for i, pages in enumerate(data_list):
-            for other_pages in data_list[i+1:]:
+            for other_pages in data_list[i + 1:]:
                 # Same here -- this needs to be made more readable
-                if ((pages.first <= other_pages.first and other_pages.first <= pages.last) or
-                   (other_pages.first <= pages.first and pages.first <= other_pages.last)):
+                if ((pages.first <= other_pages.first <= pages.last) or
+                        (other_pages.first <= pages.first <= other_pages.last)):
                     raise forms.ValidationError('Overlapping page ranges')
         return PageRangeList(data_list)
 

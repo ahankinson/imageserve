@@ -22,8 +22,9 @@ class ManuscriptAdminForm(forms.ModelForm):
         super(ManuscriptAdminForm, self).__init__(*args, **kwargs)
         instance = kwargs.get('instance')
         if instance:
-            if instance.witnesses:
-                self.fields['witness_pages'] = PageRangeListFormField(instance.witnesses)
+            wits = instance.witnesses
+            if wits:
+                self.fields['witness_pages'] = PageRangeListFormField(wits)
 
 
 class ManuscriptAdmin(GuardedModelAdmin):
