@@ -29,12 +29,11 @@ class FolderField(models.FilePathField):
 
 
 class IsmiIdField(models.IntegerField):
-    '''
+    """
     Custom model field which must be a valid ID of a
     Codex object from the ISMI database.
-    '''
+    """
     def to_python(self, value):
-        c = None
         try:
             c = get_by_ismi_id(value)
         except KeyError:
@@ -218,12 +217,25 @@ class Manuscript(models.Model):
     directory = FolderField(path=IMG_DIR, unique=True)
     ismi_id = IsmiIdField(blank=True, null=True)
     num_files = models.IntegerField(editable=False, verbose_name="# Pages")
-    witnesses = IntegerListField(editable=False)
     has_folio_nums = models.BooleanField(default=True)
     folio_pgs = FolioPagesField(editable=False, null=True)
 
     class Meta:
         ordering = ['directory']
+
+    @property
+    def witnesses(self):
+        """
+        Return the witnesses for this object.
+        """
+        # TODO: make a test for this
+        if self.ismi_id is not None:
+            c = get_by_ismi_id(self.ismi_id)
+            rels = [r for r in c['tar_rels'] if r['name'] == 'is_part_of']
+            return [r['src_id'] for r in rels]
+        # do some error handling?
+        return []
+
 
     def num_witnesses(self):
         """
@@ -231,8 +243,6 @@ class Manuscript(models.Model):
         spanning rows in a table and so this method intentionally returns
         a value which is larger than the actual number of witnesses.
         """
-        if not self.witnesses:
-            return 1
         return len(self.witnesses) + 1
 
     def witness_infos(self):
@@ -240,23 +250,14 @@ class Manuscript(models.Model):
         Generator for the authors & titles in this codex. Intended for
         use with the manuscript index view.
         """
-        if self.witnesses:
-            titles = [get_rel(w, 'is_exemplar_of')[0] for w in self.witnesses]
-            authors = [get_rel(w, 'was_created_by')[0] for w in self.witnesses]
-            return zip(self.witnesses, titles, authors)
+        wits = self.witnesses
+        if wits:
+            titles = [get_rel(w, 'is_exemplar_of')[0] for w in wits]
+            authors = [get_rel(w, 'was_created_by')[0] for w in wits]
+            return zip(wits, titles, authors)
 
     def clean(self, *args, **kwargs):
         self.num_files = len(os.listdir(os.path.join(IMG_DIR, self.directory)))
-        if not self.witnesses and self.ismi_id is not None:
-            try:
-                c = get_by_ismi_id(self.ismi_id)
-            except KeyError:
-                return super(Manuscript, self).clean(*args, **kwargs)
-            if c['oc'] != 'CODEX':
-                return super(Manuscript, self).clean(*args, **kwargs)
-            rels = [r for r in c['tar_rels'] if r['name'] == 'is_part_of']
-            wits = [r['src_id'] for r in rels]
-            self.witnesses = wits
         if not self.folio_pgs:
             self.folio_pgs = FolioPages(num_pages=self.num_files)
         return super(Manuscript, self).clean(*args, **kwargs)

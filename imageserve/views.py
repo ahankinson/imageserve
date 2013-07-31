@@ -78,7 +78,8 @@ def search(request):
     # msf = Manuscript.objects.filter(manuscriptgroup__in=manuscript_groups)
 
     q = request.GET.get('q', None)
-    m = Manuscript.objects.filter(directory__icontains=q, manuscriptgroup__in=manuscript_groups).distinct().values_list('directory', flat=True)
+    m = Manuscript.objects.filter(directory__icontains=q, manuscriptgroup__in=manuscript_groups).distinct().values_list(
+        'directory', flat=True)
     js = list(m)
     return HttpResponse(dumps(js), content_type="application/json")
 
@@ -160,7 +161,7 @@ def manuscript(request, ms_id):
     curr_wit = request.GET.get('curr_wit')
     try:
         curr_wit = int(curr_wit)
-    except:
+    except ValueError:
         curr_wit = -1
 
     # witnesses = None
@@ -170,17 +171,18 @@ def manuscript(request, ms_id):
     if m.ismi_id is not None:
         codex_title = get_name(get_by_ismi_id(m.ismi_id))
         ismi_data = True
-        if m.witnesses:
-            if not curr_wit in m.witnesses:
+        wits = m.witnesses
+        if wits:
+            if not curr_wit in wits:
                 curr_wit = -1
             titles = [(w, get_rel(w, 'is_exemplar_of')[0], get_att(w, 'folios'))
-                      for w in m.witnesses]
+                      for w in wits]
     else:
         codex_title = m.directory
 
     data = {
         'ms_title': codex_title,
-        'witnesses': bool(m.witnesses),
+        'witnesses': bool(wits),
         'divaserve_url': DIVASERVE_URL,
         'iipserver_url': IIPSERVER_URL,
         'image_root': conf.IMG_DIR,
