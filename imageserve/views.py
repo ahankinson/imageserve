@@ -161,7 +161,7 @@ def manuscript(request, ms_id):
     curr_wit = request.GET.get('curr_wit')
     try:
         curr_wit = int(curr_wit)
-    except ValueError:
+    except (ValueError, TypeError):
         curr_wit = -1
 
     # witnesses = None
