@@ -30,6 +30,7 @@ class ManuscriptAdminForm(forms.ModelForm):
 class ManuscriptAdmin(GuardedModelAdmin):
     form = ManuscriptAdminForm
     readonly_fields = ('num_files',)
+    search_fields = ('directory',)
 
     def get_form(self, request, obj=None, **kwargs):
         self.exclude = ('witness_pages', 'num_files')
