@@ -6,7 +6,10 @@
 
 {% block header %}
     <link rel="stylesheet" href="{{ STATIC_URL }}css/diva.min.css" type="text/css" />
-    <script type="text/javascript" src="{{ STATIC_URL }}js/diva.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/utils.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/diva.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/canvas.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/download.js"></script>
     <script type="text/javascript">
     {% if witnesses %}
         var currWit = {{curr_wit}};
