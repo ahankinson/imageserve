@@ -1,7 +1,8 @@
 import os
 import re
-from urllib import urlopen
-from json import loads
+import json
+import urllib
+
 from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG, CACHE_ENABLED
 from imageserve.conf import IMG_DIR
 from django.core.cache import cache
@@ -78,12 +79,12 @@ def get_by_ismi_id(iden):
         ent = cache.get(iden)
 
     if ent is None:
-        u = urlopen(
+        u = urllib.urlopen(
             "{0}method=get_ent&include_content=true&id={1}"
             .format(JSON_INTERFACE, iden)
         )
         s = u.read()
-        ent = loads(s)['ent']
+        ent = json.loads(s)['ent']
         u.close()
         if CACHE_ENABLED:
             cache.set(iden, ent)
@@ -123,8 +124,8 @@ def register_defs():
     from the ISMI database and creates Setting objects for them.
     """
     from imageserve.models import AttDisplaySetting, RelDisplaySetting
-    u = urlopen(JSON_INTERFACE+"method=get_defs")
-    defs = loads(u.read())['defs']
+    u = urllib.urlopen(JSON_INTERFACE+"method=get_defs")
+    defs = json.loads(u.read())['defs']
     u.close()
     witness_def, = [d for d in defs if d.get('ov') == 'WITNESS']
     text_def, = [d for d in defs if d.get('ov') == 'TEXT']
