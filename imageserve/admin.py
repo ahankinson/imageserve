@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
 from guardian.admin import GuardedModelAdmin
 from imageserve.helpers import register_defs, register_manuscripts
-from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting, CacheTable
+from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting, CacheTable, ISMIEntity
 from imageserve.forms import PageRangeListFormField
 
 
@@ -95,6 +95,7 @@ admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
 admin.site.register(AttDisplaySetting, AttSettingAdmin)
 admin.site.register(RelDisplaySetting, RelSettingAdmin)
 admin.site.register(CacheTable, CacheTableAdmin)
+admin.site.register(ISMIEntity)
 
 
 if settings.UPDATE_DEFS:

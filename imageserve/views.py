@@ -167,7 +167,7 @@ def manuscript(request, ms_id):
     # witnesses = None
     titles = None
     ismi_data = False
-    wits = None
+    wits = PageNotAnInteger
 
     if m.ismi_id is not None:
         codex_title = get_name(get_by_ismi_id(m.ismi_id))

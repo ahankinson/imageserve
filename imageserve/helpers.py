@@ -3,6 +3,7 @@ import re
 import json
 import urllib
 
+# from imageserve.models import ISMIEntity
 from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG, CACHE_ENABLED
 from imageserve.conf import IMG_DIR
 from django.core.cache import cache
@@ -19,14 +20,14 @@ def get_name(ent, **kwargs):
         show_id = kwargs.pop('show_id')
     ret = None
     while ret is None:
-        if 'ov' in ent:
-            if ent['ov']:
-                ret = ent['ov']
+        if 'ov' in ent.data.keys():
+            if ent.data['ov']:
+                ret = ent.data['ov']
                 break
         if 'oc' in ent:
-            if 'REFERENCE' == ent['oc']:
-                if 'atts' in ent:
-                    for att in ent['atts']:
+            if 'REFERENCE' == ent.data['oc']:
+                if 'atts' in ent.data.keys():
+                    for att in ent.data['atts']:
                         if 'name' in att:
                             break_after = False
                             if 'id' == att['name']:
@@ -40,7 +41,7 @@ def get_name(ent, **kwargs):
                                         ret = att['ov']
                                         break_after = True
                             if break_after:
-                                for attr in ent['atts']:
+                                for attr in ent.data['atts']:
                                     if 'additional_information' == attr['name']:
                                         if 'ov' in attr:
                                             if attr['ov']:
@@ -48,9 +49,9 @@ def get_name(ent, **kwargs):
                                         break
                                 break
         if ret is None:
-            return u"ISMI entity {0}".format(ent['id'])
+            return u"ISMI entity {0}".format(ent.ismi_id)
     if show_id:
-        return u"{0} (ISMI ID {1})".format(ret, ent['id'])
+        return u"{0} (ISMI ID {1})".format(ret, ent.ismi_id)
     return unicode(ret)
 
 
@@ -74,20 +75,23 @@ def get_by_ismi_id(iden):
     all the relevant info from the ISMI database entity corresponding to
     that id.
     """
-    ent = None
-    if CACHE_ENABLED:
-        ent = cache.get(iden)
+    from imageserve.models import ISMIEntity
+    print("Calling get_by_ismi_id {0}".format(iden))
+    ent = ISMIEntity.objects.filter(ismi_id=iden)
 
-    if ent is None:
+    if not ent.exists():
+        print("Entity does not exist. Creating.")
         u = urllib.urlopen(
             "{0}method=get_ent&include_content=true&id={1}"
             .format(JSON_INTERFACE, iden)
         )
         s = u.read()
-        ent = json.loads(s)['ent']
-        u.close()
-        if CACHE_ENABLED:
-            cache.set(iden, ent)
+        j = json.loads(s)['ent']
+
+        ent = ISMIEntity(ismi_id=iden, data=j)
+        ent.save()
+    else:
+        ent = ent[0]  # get the first one from the filter group
 
     return ent
 

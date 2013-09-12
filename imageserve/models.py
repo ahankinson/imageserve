@@ -4,6 +4,7 @@ from lxml import etree, html
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.cache import cache
+from django_extensions.db.fields import json
 from conf import IMG_DIR
 from imageserve.helpers import get_by_ismi_id, get_name, get_rel
 from imageserve.forms import IntegerListField, FolioPagesField, FolioPages
@@ -34,6 +35,7 @@ class IsmiIdField(models.IntegerField):
     Codex object from the ISMI database.
     """
     def to_python(self, value):
+        print("Calling ISMI Id Validation")
         # try:
         #     c = get_by_ismi_id(value)
         # except KeyError:
@@ -92,27 +94,30 @@ class AttDisplaySetting(models.Model):
         in the metadata view for the (codex or witness) in question.
         """
         ent = self.ent_getter(ID)
-        match = [a for a in ent['atts'] if a['name'] == self.name]
-        if match:
-            val = match[0].get('ov')
-            if val is not None:
-                arabic = False
-                if self.content_type == 'arabic':
-                    arabic = True
-                elif isinstance(val, basestring):
-                    if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ', '')):
+        atts = ent.data.get('atts', None)
+
+        if atts:
+            match = [a for a in atts if a['name'] == self.name]
+            if match:
+                val = match[0].get('ov')
+                if val is not None:
+                    arabic = False
+                    if self.content_type == 'arabic':
                         arabic = True
-                if arabic:
-                    val = u'<p dir=\"RTL\">{0}</p>'.format(val)
-                if self.name == 'table_of_contents':
-                    root = html.fromstring(val)
-                    for a in root.xpath('.//a[@href]'):
-                        u = a.attrib.get('href')
-                        a.set('href', '#')
-                        s = 'window.open(\"{0}\", \"_blank\")'.format(u)
-                        a.attrib['onclick'] = s
-                    val = etree.tostring(root, pretty_print=True)
-                return [val]
+                    elif isinstance(val, basestring):
+                        if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ', '')):
+                            arabic = True
+                    if arabic:
+                        val = u'<p dir=\"RTL\">{0}</p>'.format(val)
+                    if self.name == 'table_of_contents':
+                        root = html.fromstring(val)
+                        for a in root.xpath('.//a[@href]'):
+                            u = a.attrib.get('href')
+                            a.set('href', '#')
+                            s = 'window.open(\"{0}\", \"_blank\")'.format(u)
+                            a.attrib['onclick'] = s
+                        val = etree.tostring(root, pretty_print=True)
+                    return [val]
         return [NO_DATA_MSG]
 
     def __unicode__(self):
@@ -158,12 +163,19 @@ class RelDisplaySetting(models.Model):
         curr_ent = get_by_ismi_id(ID)
         if self.on_ent == 'self':
             return curr_ent
-        src_match = [r for r in curr_ent['src_rels'] if r['name'] == self.on_ent]
-        if src_match:
-            return get_by_ismi_id(src_match[0]['tar_id'])
+
+        src_rels = curr_ent.data.get('src_rels', None)
+        if src_rels:
+            src_match = [r for r in src_rels if r['name'] == self.on_ent]
+
+            if src_match:
+                return get_by_ismi_id(src_match[0]['tar_id'])
+
         else:
-            tar_match = [r for r in curr_ent['tar_rels'] if r['name'] == self.on_ent]
-            return get_by_ismi_id(tar_match[0]['src_id'])
+            tar_rels = curr_ent.data.get('tar_rels', None)
+            if tar_rels:
+                tar_match = [r for r in tar_rels if r['name'] == self.on_ent]
+                return get_by_ismi_id(tar_match[0]['src_id'])
 
     def get_vals(self, ID):
         """
@@ -171,33 +183,31 @@ class RelDisplaySetting(models.Model):
         as they would appear in the metadata view for the witness in question.
         """
         vals = None
-        if CACHE_ENABLED:
-            vals = cache.get('rels', {}).get(ID, {}).get(self.name)
+        ent = self.ent_getter(ID)
+        vals = []
 
-        if vals is None:
-            ent = self.ent_getter(ID)
-            vals = []
-            src_match = [r for r in ent['src_rels'] if r['name'] == self.name]
+        src_rels = ent.data.get('src_rels', None)
+        if src_rels:
+            src_match = [r for r in src_rels if r['name'] == self.name]
             if src_match:
                 src_match = [get_by_ismi_id(r['tar_id']) for r in src_match]
                 vals += [get_name(e, show_id=self.show_id) for e in src_match]
-            tar_match = [r for r in ent['tar_rels'] if r['name'] == self.name]
+
+        tar_rels = ent.data.get('tar_rels', None)
+        if tar_rels:
+            tar_match = [r for r in tar_rels if r['name'] == self.name]
             if tar_match:
                 tar_match = [get_by_ismi_id(r['src_id']) for r in tar_match]
                 vals += [get_name(e, show_id=self.show_id) for e in tar_match]
-            if not vals:
-                vals = [NO_DATA_MSG]
-            if CACHE_ENABLED:
-                d = cache.get('rels', {})
-                if ID in d:
-                    d[ID].update(rel_name=vals)
-                else:
-                    d[ID] = {self.name: vals}
-                cache.set('rels', d)
+
+        if not vals:
+            vals = [NO_DATA_MSG]
+
         for i, val in enumerate(vals):
             if isinstance(val, basestring):
                 if not filter(lambda c: not 'A' in unicodedata.bidirectional(c), val.replace(' ', '')):
                     vals[i] = u'<p dir=\"RTL\">{0}</p>'.format(val)
+
         return vals
 
     def __unicode__(self):
@@ -228,11 +238,14 @@ class Manuscript(models.Model):
         """
         Return the witnesses for this object.
         """
+        print("Calling witnesses")
         # TODO: make a test for this
         if self.ismi_id is not None:
             c = get_by_ismi_id(self.ismi_id)
-            rels = [r for r in c['tar_rels'] if r['name'] == 'is_part_of']
-            return [r['src_id'] for r in rels]
+            tar_rels = c.data.get('tar_rels', None)
+            if tar_rels:
+                rels = [r for r in tar_rels if r['name'] == 'is_part_of']
+                return [r['src_id'] for r in rels]
         # do some error handling?
         return []
 
@@ -281,6 +294,11 @@ class ManuscriptGroup(models.Model):
 
     def __unicode__(self):
         return unicode(self.name)
+
+
+class ISMIEntity(models.Model):
+    ismi_id = models.IntegerField(primary_key=True)
+    data = json.JSONField(default="[]", blank=True, null=True)
 
 
 class CacheTable(models.Model):
