@@ -25,6 +25,8 @@ import math
 import json
 import warnings
 import re
+from django.conf import settings
+
 
 try:
     # you can set a site-wide configuration file named 'conf'
@@ -37,7 +39,7 @@ except ImportError:
     class conf(object):
         MEMCACHED_ENABLED = True
         MEMCACHED_SERVER = '127.0.0.1:11211'
-        IMG_DIR = '/mnt/images'
+        IMG_DIR = settings.IMG_DIR
         TMP_DIR = '/tmp/diva.js'
 
 memcached_enabled = conf.MEMCACHED_ENABLED
@@ -76,7 +78,7 @@ class DivaServe(object):
             self.mc_conn = pylibmc.Client([conf.MEMCACHED_SERVER], binary=True)
             self.mc_conn.behaviors = {"tcp_nodelay": True, "ketama": True}
 
-        self.srvdir = conf.IMG_DIR
+        self.srvdir = settings.IMG_DIR
         self.tmpdir = conf.TMP_DIR
         if not os.path.exists(self.tmpdir):
             os.mkdir(self.tmpdir)

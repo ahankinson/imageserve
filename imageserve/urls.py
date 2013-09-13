@@ -1,18 +1,21 @@
 from django.conf.urls import patterns, include, url
-from imageserve import views
 import divaserve
 from django.contrib import admin
 admin.autodiscover()
 
+from imageserve.views.main import main
+from imageserve.views.manuscript import manuscript
+from imageserve.views.search import search
+from imageserve.views.diva import diva
 
 urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^/?$', views.main),
-    url(r'^codex/(?P<ms_id>[a-zA-Z0-9_-]+)$', views.manuscript),
-    url(r'^search/$', views.search),
+    url(r'^/?$', main),
+    url(r'^codex/(?P<ms_id>[a-zA-Z0-9_-]+)$', manuscript),
+    url(r'^search/$', search),
     url(r'^goto/$', views.goto),
     url(r'^metadata/?', views.metadata),
-    url(r'^divaserve/?', views.diva),
+    url(r'^divaserve/?', diva),
     url(r'^login/?', 'django.contrib.auth.views.login', {'template_name': 'templates/login.html'}),
     url(r'^logout/?', views.logout_view),
     url(r'^wit_for_page$', views.wit_for_page),

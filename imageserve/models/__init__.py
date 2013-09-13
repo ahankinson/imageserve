@@ -1,0 +1,1 @@
+from imageserve.models.manuscript import Manuscript

@@ -179,7 +179,7 @@ class Command(BaseCommand):
         for directory in STABI_CODICES:
             ms = Manuscript.objects.filter(directory=directory)
             if not ms:
-                print directory, 'not found'
+                print('{0} not found'.format(directory))
                 continue
             ms = Manuscript.objects.get(directory=directory)
             mg.manuscripts.add(ms)

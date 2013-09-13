@@ -3,9 +3,10 @@ import os
 
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
-JSON_INTERFACE = "https://openmind-ismi-dev.mpiwg-berlin.mpg.de/om4-ismi/jsonInterface?"
+JSON_INTERFACE = "http://openmind-ismi-dev.mpiwg-berlin.mpg.de/om4-ismi/jsonInterface?"
 DIVASERVE_URL = "https://images.rasi.mcgill.ca/divaserve"
 IIPSERVER_URL = "https://images.rasi.mcgill.ca/fcgi-bin/iipsrv.fcgi"
+IMG_DIR = "/Users/ahankins/Documents/code/git/imageserve/images"
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -15,8 +16,8 @@ NO_DATA_MSG = "Data not entered"
 
 # set to true to update the defs and manuscripts.
 # Switched off by default for performance reasons
-UPDATE_MANUSCRIPTS = False
-UPDATE_DEFS = False
+UPDATE_MANUSCRIPTS = True
+UPDATE_DEFS = True
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -42,6 +43,7 @@ CACHES = {
         # }
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'is_cache_table',
+        'TIMEOUT': 0
     }
 }
 
@@ -49,8 +51,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',  # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
         'NAME': 'imageserve_app',
-        'USER': 'imageserve_app',
-        'PASSWORD': 'imageserve',
+        'USER': 'ahankins',
+        'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '5432'
     }
@@ -212,3 +214,170 @@ LOGGING = {
         },
     }
 }
+
+STABI_CODICES = [
+    "Diez_A_quart_49",
+    "Glaser_6",
+    "Glaser_21",
+    "Glaser_40",
+    "Glaser_83",
+    "Glaser_103",
+    "Glaser_163",
+    "Glaser_227",
+    "Glaser_239",
+    "Landberg_33",
+    "Landberg_56",
+    "Landberg_58",
+    "Landberg_63",
+    "Landberg_68",
+    "Landberg_71",
+    "Landberg_108",
+    "Landberg_110",
+    "Landberg_131",
+    "Landberg_132",
+    "Landberg_144",
+    "Landberg_199",
+    "Landberg_221",
+    "Landberg_390",
+    "Landberg_493",
+    "Landberg_517",
+    "Landberg_526a",
+    "Landberg_526b",
+    "Landberg_526c",
+    "Landberg_528",
+    "Landberg_548",
+    "Landberg_558",
+    "Landberg_563",
+    "Landberg_574",
+    "Landberg_597",
+    "Landberg_599",
+    "Landberg_608",
+    "Landberg_656",
+    "Landberg_669",
+    "Landberg_700",
+    "Landberg_720",
+    "Landberg_721",
+    "Landberg_724",
+    "Landberg_725",
+    "Landberg_734",
+    "Landberg_789",
+    "Landberg_801",
+    "Landberg_808",
+    "Landberg_880",
+    "Landberg_901",
+    "Landberg_953",
+    "Landberg_1038",
+    "Landberg_1045",
+    "Landberg_1047",
+    "Minutoli_190",
+    "Ms_or_fol_34",
+    "Ms_or_fol_256",
+    "Ms_or_oct_109",
+    "Ms_or_oct_200",
+    "Ms_or_oct_252",
+    "Ms_or_oct_273",
+    "Ms_or_oct_274",
+    "Ms_or_oct_275",
+    "Ms_or_quart_98",
+    "Ms_or_quart_99",
+    "Ms_or_quart_100",
+    "Ms_or_quart_101",
+    "Ms_or_quart_103",
+    "Ms_or_quart_119",
+    "Ms_or_quart_180b",
+    "Ms_or_quart_559",
+    "Ms_or_quart_690",
+    "Ms_or_quart_704",
+    "Ms_or_quart_728",
+    "Ms_or_quart_733",
+    "Petermann_II_79",
+    "Petermann_II_124",
+    "Petermann_II_228",
+    "Petermann_II_369",
+    "Petermann_II_396",
+    "Petermann_II_402",
+    "Petermann_II_466",
+    "Petermann_II_681",
+    "Petermann_I_62",
+    "Petermann_I_67",
+    "Petermann_I_315",
+    "Petermann_I_542",
+    "Petermann_I_669",
+    "Petermann_I_670",
+    "Petermann_I_671",
+    "Petermann_I_672",
+    "Petermann_I_673",
+    "Petermann_I_674",
+    "Sprenger_1824a",
+    "Sprenger_1824b",
+    "Sprenger_1825",
+    "Sprenger_1832-1833",
+    "Sprenger_1835",
+    "Sprenger_1837",
+    "Sprenger_1838",
+    "Sprenger_1841",
+    "Sprenger_1844",
+    "Sprenger_1847a",
+    "Sprenger_1847b",
+    "Sprenger_1848",
+    "Sprenger_1849",
+    "Sprenger_1855",
+    "Sprenger_1857",
+    "Sprenger_1858",
+    "Sprenger_1863",
+    "Sprenger_1866",
+    "Sprenger_1869",
+    "Sprenger_1872",
+    "Sprenger_1876",
+    "Sprenger_1877",
+    "Sprenger_1979",
+    "Wetzstein_II_131",
+    "Wetzstein_II_1127",
+    "Wetzstein_II_1128",
+    "Wetzstein_II_1129",
+    "Wetzstein_II_1130",
+    "Wetzstein_II_1131",
+    "Wetzstein_II_1132",
+    "Wetzstein_II_1133",
+    "Wetzstein_II_1134",
+    "Wetzstein_II_1135",
+    "Wetzstein_II_1136",
+    "Wetzstein_II_1138",
+    "Wetzstein_II_1138a",
+    "Wetzstein_II_1139",
+    "Wetzstein_II_1142",
+    "Wetzstein_II_1143",
+    "Wetzstein_II_1146",
+    "Wetzstein_II_1148",
+    "Wetzstein_II_1149",
+    "Wetzstein_II_1150",
+    "Wetzstein_II_1152",
+    "Wetzstein_II_1713",
+    "Wetzstein_II_1717",
+    "Wetzstein_II_1725",
+    "Wetzstein_II_1734",
+    "Wetzstein_II_1736a",
+    "Wetzstein_II_1746",
+    "Wetzstein_II_1763",
+    "Wetzstein_II_1766",
+    "Wetzstein_II_1772",
+    "Wetzstein_II_1782",
+    "Wetzstein_II_1791",
+    "Wetzstein_II_1809",
+    "Wetzstein_II_1810",
+    "Wetzstein_II_1811",
+    "Wetzstein_II_1813",
+    "Wetzstein_II_1817",
+    "Wetzstein_II_1825",
+    "Wetzstein_II_1834",
+    "Wetzstein_II_1869",
+    "Wetzstein_I_90",
+    "Wetzstein_I_175",
+    "Wetzstein_I_179",
+    "Wetzstein_I_191",
+    "Wetzstein_I_193"
+]
+
+
+
+
