@@ -7,6 +7,10 @@ from guardian.admin import GuardedModelAdmin
 # from imageserve.helpers import register_defs, register_manuscripts
 # from imageserve.models import Manuscript, ManuscriptGroup, AttDisplaySetting, RelDisplaySetting, CacheTable, ISMIEntity
 from imageserve.models import Manuscript
+from imageserve.models import ManuscriptGroup
+from imageserve.models import Witness
+
+from imageserve.ismi.witness import fetch_witnesses
 # from imageserve.forms import PageRangeListFormField
 
 
@@ -19,31 +23,50 @@ class ManuscriptAdminForm(forms.ModelForm):
     class Meta:
         model = Manuscript
 
-    def __init__(self, *args, **kwargs):
-        super(ManuscriptAdminForm, self).__init__(*args, **kwargs)
-        instance = kwargs.get('instance')
-        if instance:
-            wits = instance.witnesses
-            if wits:
-                self.fields['witness_pages'] = PageRangeListFormField(wits)
+    # def __init__(self, *args, **kwargs):
+    #     super(ManuscriptAdminForm, self).__init__(*args, **kwargs)
+    #     instance = kwargs.get('instance')
+    #     if instance:
+    #         wits = instance.witnesses
+    #         if wits:
+    #             self.fields['witness_pages'] = PageRangeListFormField(wits)
+
+def update_witnesses(modeladmin, request, queryset):
+    for mss in queryset:
+        if mss.witnesses:
+            mss.witnesses.clear()
+        witnesses = fetch_witnesses(mss.ismi_id)
+        if witnesses:
+            for witness in witnesses:
+                w = Witness()
+                w.manuscript = mss
+                print(witness)
+                w.ismi_id = witness.get('id', None)
+                w.data = witness
+                w.save()
 
 
 class ManuscriptAdmin(GuardedModelAdmin):
-    form = ManuscriptAdminForm
-    readonly_fields = ('num_files',)
     search_fields = ('directory',)
+    list_display = ('ms_name', 'ismi_id', 'directory', 'num_files')
+    actions = (update_witnesses,)
 
-    def get_form(self, request, obj=None, **kwargs):
-        self.exclude = ('witness_pages', 'num_files')
-        if obj:
-            self.exclude = ('witness_pages',)
-            if obj.witnesses:
-                self.exclude = ()
-        return super(ManuscriptAdmin, self).get_form(request, obj, **kwargs)
+    # def get_form(self, request, obj=None, **kwargs):
+    #     self.exclude = ('witness_pages', 'num_files')
+    #     if obj:
+    #         self.exclude = ('witness_pages',)
+    #         if obj.witnesses:
+    #             self.exclude = ()
+    #     return super(ManuscriptAdmin, self).get_form(request, obj, **kwargs)
 
 
-# class ManuscriptGroupAdmin(GuardedModelAdmin):
-#     filter_horizontal = ('manuscripts',)
+class ManuscriptGroupAdmin(GuardedModelAdmin):
+    filter_horizontal = ('manuscripts',)
+
+
+class WitnessAdmin(GuardedModelAdmin):
+    search_fields = ('manuscript__ismi_id',)
+    list_display = ('ismi_id',)
 
 
 # class AttSettingListFilter(admin.SimpleListFilter):
@@ -92,7 +115,8 @@ class ManuscriptAdmin(GuardedModelAdmin):
 
 # admin.site.register(models.Manuscript, models.ManuscriptAdmin)
 admin.site.register(Manuscript, ManuscriptAdmin)
-# admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
+admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
+admin.site.register(Witness, WitnessAdmin)
 # admin.site.register(AttDisplaySetting, AttSettingAdmin)
 # admin.site.register(RelDisplaySetting, RelSettingAdmin)
 # admin.site.register(CacheTable, CacheTableAdmin)

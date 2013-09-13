@@ -1,3 +1,4 @@
+import os
 from django.db import models
 from django.conf import settings
 from django_extensions.db.fields import json
@@ -8,15 +9,22 @@ class Manuscript(models.Model):
     The model for all manuscripts in the RASI database. These correspond
     to Codex objects in the ISMI database for metadata purposes.
     """
-    directory = models.FilePathField(path=settings.IMG_DIR, allow_files=False, allow_folders=True, unique=True)
-    ismi_id = models.IntegerField(blank=True, null=True)
-    num_files = models.IntegerField(editable=False, verbose_name="# Pages")
+    directory = models.FilePathField(path=settings.IMG_DIR, allow_files=False, allow_folders=True, unique=True, max_length=256)
+    ismi_id = models.IntegerField(blank=True, null=True, verbose_name="ISMI ID")
+    num_files = models.IntegerField(verbose_name="# Pages")
     has_folio_nums = models.BooleanField(default=True)
     folio_pgs = json.JSONField(editable=False, null=True)
 
     class Meta:
         app_label = "imageserve"
         ordering = ['directory']
+
+    @property
+    def ms_name(self):
+        return os.path.basename(self.directory)
+
+    def __unicode__(self):
+        return u"{0}".format(self.ms_name)
 
     # @property
     # def witnesses(self):
@@ -59,8 +67,4 @@ class Manuscript(models.Model):
     #     if not self.folio_pgs:
     #         self.folio_pgs = FolioPages(num_pages=self.num_files)
     #     return super(Manuscript, self).clean(*args, **kwargs)
-
-    def __unicode__(self):
-        return unicode(self.directory)
-
 

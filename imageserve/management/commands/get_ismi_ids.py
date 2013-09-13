@@ -1,7 +1,10 @@
+import os
+
 from imageserve.ismi import api
 from imageserve.ismi import parse
 
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from imageserve.models import Manuscript
 
 
@@ -15,14 +18,14 @@ class Command(BaseCommand):
         for entity in entities:
             if entity.get('ov', None):
                 entity_name = parse.name(entity.get('ov'))
-                entity_id = parse.valid_id(entity.get('id'))
-                ms = Manuscript.objects.filter(directory=entity_name)
+                entity_id = int(entity.get('id'))
+                directory = os.path.join(settings.IMG_DIR, entity_name)
+                ms = Manuscript.objects.filter(directory=directory)
                 if ms.exists():
-                    ms[0].ismi_id = entity_id
-                    ms.save()
+                    print("Matching {0} with {1} ID {2}".format(ms[0].directory, entity_name, entity_id))
+                    ms.update(ismi_id=entity_id)
                 else:
                     print("Entry for {0} not found.".format(entity_name))
-                # pairs.append((entity_name, entity.get('id')))
 
 
 

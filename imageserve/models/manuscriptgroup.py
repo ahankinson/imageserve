@@ -7,7 +7,7 @@ class ManuscriptGroup(models.Model):
     under some common category.
     """
     name = models.CharField(max_length=255, blank=True, null=True)
-    manuscripts = models.ManyToManyField(Manuscript, blank=True, null=True)
+    manuscripts = models.ManyToManyField("imageserve.Manuscript", blank=True, null=True)
 
     class Meta:
         app_label = "imageserve"
@@ -16,4 +16,4 @@ class ManuscriptGroup(models.Model):
         )
 
     def __unicode__(self):
-        return unicode(self.name)
+        return u"{0}".format(self.name)

@@ -11,5 +11,7 @@ def fetch(method, *args, **kwargs):
     print('sending URL: {0}'.format(url))
 
     r = requests.get(url, verify=True)
-
-    return r.json()
+    if r:
+        return r.json()
+    else:
+        return None

@@ -25,27 +25,27 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-CACHES = {
-    'default': {
-        #'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
-        # 'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
-        # 'LOCATION': [
-        #     'localhost:11211',
-        #     'localhost:11212',
-        #     'localhost:11213',
-        #     'localhost:11214',
-        #     'localhost:11215',
-        # ],
-        # 'BINARY': True,
-        # 'OPTIONS': {
-        #     'tcp_nodelay': True,
-        #     'ketama': True
-        # }
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'is_cache_table',
-        'TIMEOUT': 0
-    }
-}
+# CACHES = {
+#     'default': {
+#         #'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+#         # 'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+#         # 'LOCATION': [
+#         #     'localhost:11211',
+#         #     'localhost:11212',
+#         #     'localhost:11213',
+#         #     'localhost:11214',
+#         #     'localhost:11215',
+#         # ],
+#         # 'BINARY': True,
+#         # 'OPTIONS': {
+#         #     'tcp_nodelay': True,
+#         #     'ketama': True
+#         # }
+#         # 'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+#         # 'LOCATION': 'is_cache_table',
+#         # 'TIMEOUT': 0
+#     }
+# }
 
 DATABASES = {
     'default': {
@@ -147,7 +147,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.cache.FetchFromCacheMiddleware'
+    # 'django.middleware.cache.FetchFromCacheMiddleware'
 )
 
 
