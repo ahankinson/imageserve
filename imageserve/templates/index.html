@@ -48,7 +48,17 @@
                     <td>{{ m.ismi_id }}</td>
                     <td><a href="/codex/{{m.id}}">{{ m.ms_name }}</a></td>
                     <td>{{ m.num_files }}</td>
-                    <td>No titles identified</td>
+                    {% if m.witnesses %}
+                        <td>
+                            <ul>
+                            {% for w in m.witnesses.all %}
+                                <li>{{ w.name }}</li>
+                            {% endfor %}
+                            </ul>
+                        </td>
+                    {% else %}
+                        <td>No titles identified</td>
+                    {% endif %}
                     <td>No authors identified</td>
                 </tr>
 
