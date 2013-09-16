@@ -3,14 +3,14 @@ from django.contrib import admin
 admin.autodiscover()
 
 from imageserve.views.main import main
-# from imageserve.views.manuscript import manuscript
+from imageserve.views.manuscript import manuscript
 # from imageserve.views.search import search
 # from imageserve.views.diva import diva
 
 urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^/?$', main),
-    # url(r'^codex/(?P<ms_id>[a-zA-Z0-9_-]+)$', manuscript),
+    url(r'^codex/(?P<ms_id>[a-zA-Z0-9_-]+)$', manuscript),
     # url(r'^search/$', search),
     # url(r'^goto/$', views.goto),
     # url(r'^metadata/?', views.metadata),
