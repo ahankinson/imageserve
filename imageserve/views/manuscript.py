@@ -1,14 +1,46 @@
-from urllib import quote_plus
+import re
+# from urllib import quote_plus
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
-from django.core.paginator import PageNotAnInteger
+# from django.core.paginator import PageNotAnInteger
+from rest_framework import generics
+from rest_framework import permissions
+from rest_framework.renderers import JSONRenderer, JSONPRenderer
 from guardian.shortcuts import get_objects_for_user
 
+from imageserve.renderers.custom_html_renderer import CustomHTMLRenderer
+from imageserve.serializers.manuscript import ManuscriptSerializer
 from imageserve.models import Manuscript
 
-def manuscript(request, ms_id):
+def tryint(s):
+    try:
+        return int(s)
+    except:
+        return s
+
+def alphanum_key(s):
+    """ Turn a string into a list of string and number chunks.
+        "z23a" -> ["z", 23, "a"]
+    """
+    return [tryint(c) for c in re.split('([0-9]+)', s)]
+
+def by_folio(obj):
+    return alphanum_key(obj.folios)
+
+
+class ManuscriptDetailHTMLRenderer(CustomHTMLRenderer):
+    template_name = "manuscript/manuscript.html"
+
+
+class ManuscriptDetail(generics.RetrieveUpdateDestroyAPIView):
+    model = Manuscript
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    serializer_class = ManuscriptSerializer
+    renderer_classes = (JSONRenderer, JSONPRenderer, ManuscriptDetailHTMLRenderer)
+
+def manuscript(request, pk, witness=None):
     """The view for displaying a specific manuscript."""
     if request.user.is_anonymous():
         u = User.objects.get(pk=-1)  # select the "AnonymousUser" object
@@ -26,50 +58,40 @@ def manuscript(request, ms_id):
     if not manuscripts.exists():
         raise Http404
 
-    has_permission = manuscripts.filter(id=ms_id)
+    has_permission = manuscripts.filter(ismi_id=pk)
 
     if manuscripts and not has_permission.exists():
         return redirect('/login/?next={0}'.format(request.path))
 
     m = has_permission[0]
-    curr_wit = request.GET.get('curr_wit')
-    try:
-        curr_wit = int(curr_wit)
-    except (ValueError, TypeError):
-        curr_wit = -1
 
-    # witnesses = None
-    titles = None
-    ismi_data = False
-    wits = PageNotAnInteger
+    known_witnesses = list(m.known_witnesses.all())
+    known_witnesses.sort(key=by_folio)
 
-    # if m.ismi_id is not None:
-    #     codex_title = get_name(get_by_ismi_id(m.ismi_id))
-    #     ismi_data = True
-    #     wits = m.witnesses
-    #     if wits:
-    #         if not curr_wit in wits:
-    #             curr_wit = -1
-    #         titles = [(w, get_rel(w, 'is_exemplar_of')[0], get_att(w, 'folios'))
-    #                   for w in wits]
-    # else:
-    #     codex_title = m.directory
-
-    ismi_data = True
+    unknown_witnesses = list(m.unknown_witnesses.all())
+    unknown_witnesses.sort(key=by_folio)
+    has_data = False
 
     data = {
-        'ms_title': m.ms_name,
-        'witnesses': bool(wits),
+        'manuscript': m,
+        'has_data': has_data,
         'divaserve_url': settings.DIVASERVE_URL,
         'iipserver_url': settings.IIPSERVER_URL,
         'image_root': settings.IMG_DIR,
-        'curr_wit': curr_wit,
-        'ms_name': m.directory,
-        'titles': titles,
-        'ismi_data': ismi_data,
-        'ms_id': ms_id,
-        'ismi_id': m.ismi_id,
-        'path': quote_plus(request.get_full_path()),
-        'num_files': m.num_files,
+        'known_witnesses': known_witnesses,
+        'unknown_witnesses': unknown_witnesses
+        # 'ms_title': m.ms_name,
+        # 'witnesses': bool(wits),
+        # 'divaserve_url': settings.DIVASERVE_URL,
+        # 'iipserver_url': settings.IIPSERVER_URL,
+        # 'image_root': settings.IMG_DIR,
+        # # 'curr_wit': curr_wit,
+        # 'ms_name': m.directory,
+        # 'titles': titles,
+        # 'ismi_data': ismi_data,
+        # 'ms_id': manuscript,
+        # 'ismi_id': m.ismi_id,
+        # 'path': quote_plus(request.get_full_path()),
+        # 'num_files': m.num_files,
     }
     return render(request, "templates/diva.html", data)

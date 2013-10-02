@@ -1,4 +1,6 @@
 {% extends 'main.html' %}
+{% load rest_framework %}
+{% load filter_methods %}
 
 {% block title %}
     Imageserve - Viewing {{ ms_title }}
@@ -18,7 +20,7 @@
                 {
                     var dv = $('#diva-wrapper').data('diva');
                     var value = $(this).val();
-                    var success = dv.gotoPageByIndex(value);
+                    var success = dv.gotoPageByNumber(value);
 
                     if (!success)
                     {
@@ -40,7 +42,13 @@
                 }
             });
 
-            
+            $('#go-to-witness-link').on('click', function(ev) {
+                var dv = $('#diva-wrapper').data('diva');
+                var start_page = $(this).data('start');
+                dv.gotoPageByNumber(start_page);
+
+                ev.preventDefault();
+            });
 
             $('.set-start-image-btn').on('click', function(ev)
             {
@@ -88,7 +96,9 @@
 
             function handlePageSwitch(idx, fn, divid)
             {
-                $('#current-page-idx').text(idx);
+                // page number is what we're after, which is always
+                // page index + 1.
+                $('#current-page-idx').text(idx + 1);
                 $('#current-page-fn').text(fn);
             }
 
@@ -105,10 +115,10 @@
                 enableGotoPage: false,
                 fixedHeightGrid: false,
                 contained: true,
-                iipServerURL: "{{ iipserver_url }}",
-                divaserveURL: "{{ divaserve_url }}",
-                imageRoot: "{{ image_root }}",
-                imageDir: "{{ manuscript.ms_name }}",
+                iipServerURL: "{{ IIPSERVER_URL }}",
+                divaserveURL: "{{ DIVASERVE_URL }}",
+                imageRoot: "{{ IMG_DIR }}",
+                imageDir: "{{ content.ms_name }}",
 
                 onSetCurrentPage: handlePageSwitch,
                 onDocumentLoaded: handleDocumentLoaded
@@ -120,11 +130,12 @@
 {% endblock %}
 
 {% block wrap %}
+
 <div class="row-fluid">
     <div class="span4">
-        {% if manuscript.ismi_id %}
-            <h3 id="ms-title">{{ manuscript.ms_name }}</h3>
-            {% if known_witnesses %}
+        {% if content.ismi_id %}
+            <h3 id="ms-title">{{ content.ms_name }}</h3>
+            {% if content.witnesses %}
             <h4>Titles in this Codex</h4>
             <table class="table table-bordered table-condensed">
                 <thead>
@@ -134,23 +145,28 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for witness in known_witnesses %}
-                        {% for t in witness.texts.all %}
-                            <tr>
-                                <td>{{ t.name }}</td>
-                                <td><a href="">{{ witness.folios }}</a></td>
-                            </tr>
-                        {% endfor %}
+                    {% for witness in content.witnesses %}
+                        {% if witness.known %}
+                            {% for t in witness.texts %}
+                                <tr>
+                                    <td>{{ t.name }}</td>
+                                    <td><a id="go-to-witness-link" href="#" data-start="{{ witness.start_page }}">{{ witness.folios }}</a></td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
                     {% endfor %}
                 </tbody>
             </table>
             {% endif %}
 
-            {% if unknown_witnesses %}
+
+            {% if content.has_unknown_witnesses %}
             <h4>Unknown titles in this Codex</h4>
             <p>
-                {% for witness in unknown_witnesses %}
-                    <span><a href="">{{ witness.folios }} </a></span>
+                {% for witness in content.witnesses %}
+                    {% if not witness.known %}
+                        <span><a href="">{{ witness.folios }} </a></span>
+                    {% endif %}
                 {% endfor %}
             </p>
             {% endif %}
@@ -174,7 +190,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for witness in manuscript.witnesses.all %}
+                    {% for witness in content.witnesses %}
                         <tr>
                             <td>{{ witness.name }}: {{ witness.folios }}</td>
                             <td>

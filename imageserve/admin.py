@@ -9,8 +9,10 @@ from guardian.admin import GuardedModelAdmin
 from imageserve.models import Manuscript
 from imageserve.models import ManuscriptGroup
 from imageserve.models import Witness
+from imageserve.models import Text
+from imageserve.models import Person
+from imageserve.ismi.witness import fetch_mss_witnesses
 
-from imageserve.ismi.witness import fetch_witnesses
 # from imageserve.forms import PageRangeListFormField
 
 
@@ -31,19 +33,9 @@ class ManuscriptAdminForm(forms.ModelForm):
     #         if wits:
     #             self.fields['witness_pages'] = PageRangeListFormField(wits)
 
+
 def update_witnesses(modeladmin, request, queryset):
-    for mss in queryset:
-        if mss.witnesses:
-            mss.witnesses.clear()
-        witnesses = fetch_witnesses(mss.ismi_id)
-        if witnesses:
-            for witness in witnesses:
-                w = Witness()
-                w.manuscript = mss
-                print(witness)
-                w.ismi_id = witness.get('id', None)
-                w.data = witness
-                w.save()
+    fetch_mss_witnesses(queryset)
 
 
 class ManuscriptAdmin(GuardedModelAdmin):
@@ -51,23 +43,23 @@ class ManuscriptAdmin(GuardedModelAdmin):
     list_display = ('ms_name', 'ismi_id', 'directory', 'num_files')
     actions = (update_witnesses,)
 
-    # def get_form(self, request, obj=None, **kwargs):
-    #     self.exclude = ('witness_pages', 'num_files')
-    #     if obj:
-    #         self.exclude = ('witness_pages',)
-    #         if obj.witnesses:
-    #             self.exclude = ()
-    #     return super(ManuscriptAdmin, self).get_form(request, obj, **kwargs)
-
 
 class ManuscriptGroupAdmin(GuardedModelAdmin):
     filter_horizontal = ('manuscripts',)
 
 
 class WitnessAdmin(GuardedModelAdmin):
-    search_fields = ('manuscript__ismi_id',)
-    list_display = ('ismi_id',)
+    search_fields = ('manuscript__ismi_id', 'manuscript__directory', 'name')
+    list_display = ('name', 'ismi_id', 'manuscript_name', 'folios', 'start_folio', 'end_folio')
+    ordering = ('manuscript__directory', 'folios')
 
+
+class TextAdmin(GuardedModelAdmin):
+    pass
+
+
+class PersonAdmin(GuardedModelAdmin):
+    pass
 
 # class AttSettingListFilter(admin.SimpleListFilter):
 #     title = _('type of object')
@@ -113,10 +105,11 @@ class WitnessAdmin(GuardedModelAdmin):
 #     list_display = ('cache_key', 'expires')
 #     search_fields = ('cache_key',)
 
-# admin.site.register(models.Manuscript, models.ManuscriptAdmin)
 admin.site.register(Manuscript, ManuscriptAdmin)
 admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
 admin.site.register(Witness, WitnessAdmin)
+admin.site.register(Text, TextAdmin)
+admin.site.register(Person, PersonAdmin)
 # admin.site.register(AttDisplaySetting, AttSettingAdmin)
 # admin.site.register(RelDisplaySetting, RelSettingAdmin)
 # admin.site.register(CacheTable, CacheTableAdmin)

@@ -26,6 +26,12 @@ class Manuscript(models.Model):
     def __unicode__(self):
         return u"{0}".format(self.ms_name)
 
+    @property
+    def has_unknown_witnesses(self):
+        unknown_witnesses = self.witnesses.filter(name__startswith="UNKNOWN_")
+        return unknown_witnesses.exists()
+
+
     # @property
     # def witnesses(self):
     #     """

@@ -9,14 +9,25 @@ class Witness(models.Model):
     manuscript = models.ForeignKey("imageserve.Manuscript", blank=True, null=True, related_name="witnesses")
     data = json.JSONField(default="[]", blank=True, null=True)
     folios = models.CharField(max_length=256, null=True, blank=True)
+    start_page = models.CharField(max_length=256, null=True, blank=True)
+    end_page = models.CharField(max_length=256, null=True, blank=True)
 
     class Meta:
+        ordering = ["folios"]
         app_label = "imageserve"
         verbose_name_plural = "Witnesses"
 
     @property
+    def known(self):
+        return not self.name.startswith("UNKNOWN_")
+
+    @property
     def manuscript_name(self):
         return self.manuscript.ms_name
+
+    @property
+    def titles(self):
+        return self.texts.all()
 
     @property
     def start_folio(self):

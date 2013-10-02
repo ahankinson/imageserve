@@ -1,8 +1,8 @@
-import os
+# import os
 # import re
 # import json
 # import urllib
-from django.conf import settings
+# from django.conf import settings
 
 # # from imageserve.models import ISMIEntity
 # from imageserve.settings import JSON_INTERFACE, NO_DATA_MSG, CACHE_ENABLED
@@ -183,19 +183,19 @@ from django.conf import settings
 #             sett.save()
 
 
-def register_manuscripts():
-    """
-    Looks through the IMG_DIR folder for all manuscripts and ensures the
-    database contains a Manuscript object for each.
-    """
-    from imageserve.models import Manuscript
+# def register_manuscripts():
+#     """
+#     Looks through the IMG_DIR folder for all manuscripts and ensures the
+#     database contains a Manuscript object for each.
+#     """
+#     from imageserve.models import Manuscript
 
-    directories = os.listdir(settings.IMG_DIR)
-    known_manuscripts = Manuscript.objects.values_list('directory', flat=True)
-    unknown_manuscripts = set(known_manuscripts).symmetric_difference(set(directories))
-    for name in unknown_manuscripts:
-        if os.path.isdir(os.path.join(settings.IMG_DIR, name)):
-            num_files = len(os.listdir(os.path.join(settings.IMG_DIR, name)))
-            m = Manuscript(directory=name, num_files=num_files)
-            m.clean()
-            m.save()
+#     directories = os.listdir(settings.IMG_DIR)
+#     known_manuscripts = Manuscript.objects.values_list('directory', flat=True)
+#     unknown_manuscripts = set(known_manuscripts).symmetric_difference(set(directories))
+#     for name in unknown_manuscripts:
+#         if os.path.isdir(os.path.join(settings.IMG_DIR, name)):
+#             num_files = len(os.listdir(os.path.join(settings.IMG_DIR, name)))
+#             m = Manuscript(directory=name, num_files=num_files)
+#             m.clean()
+#             m.save()

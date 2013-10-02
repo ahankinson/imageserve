@@ -20,14 +20,14 @@
 
 {% block wrap %}
 {% if user.is_authenticated %}
-<div class="row-fluid">
+<!-- <div class="row-fluid">
     <div class="span12">
         <form class="form-search">
             <input type="text" id="searchfield" class="input-medium search-query">
             <button type="submit" class="btn">Search</button>
         </form>
     </div>
-</div>
+</div> -->
 {% endif %}
 <div class="row-fluid">
     <div class="span12">
@@ -38,28 +38,51 @@
                     <th>ISMI ID</th>
                     <th>Codex</th>
                     <th># Pages</th>
-                    <th>Title</th>
-                    <th>Author</th>
+                    <th>Titles in this Codex</th>
                 </tr>
             </thead>
             <tbody>
             {% for m in manuscripts %}
                 <tr>
                     <td>{{ m.ismi_id }}</td>
-                    <td><a href="/codex/{{m.id}}">{{ m.ms_name }}</a></td>
+                    <td><a href="/codex/{{m.ismi_id}}">{{ m.ms_name }}</a></td>
                     <td>{{ m.num_files }}</td>
                     {% if m.witnesses %}
                         <td>
+                            {% if m.known_witnesses %}
+                            <p>Known Witnesses</p>
                             <ul>
-                            {% for w in m.witnesses.all %}
-                                <li>{{ w.name }}</li>
+                            {% for w in m.known_witnesses.all %}
+                                {% for t in w.texts.all %}
+                                    <li>
+                                        <a href="/codex/{{ m.ismi_id }}/witness/{{ w.ismi_id }}">{{ t.name }}</a>
+                                        {% if t.people %}
+                                        <ul>
+                                            {% for p in t.people.all %}
+                                                <li><strong>Attribution:</strong> {{ p.name }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
                             {% endfor %}
                             </ul>
+                            {% endif %}
+
+                            {% if m.unknown_witnesses %}
+                                <p>Unknown Witnesses</p>
+                                <ul>
+                                {% for w in m.unknown_witnesses.all %}
+                                    <li>
+                                        <a href="/codex/{{ m.ismi_id }}/witness/{{ w.ismi_id }}">{{ w.folios }}</a>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            {% endif %}
                         </td>
                     {% else %}
                         <td>No titles identified</td>
                     {% endif %}
-                    <td>No authors identified</td>
                 </tr>
 
             {% endfor %}
@@ -96,22 +119,29 @@
             </tbody>
         </table>
         {% bootstrap_paginate manuscripts range=10 show_first_last="true" %}
-        <script type="text/javascript">
+        <!-- <script type="text/javascript">
             $("#searchfield").typeahead({
-                minLength: 3,
-                items: 10,
-                source: function(query, process) {
-                    $.getJSON('/search/?q=' + query, function(data) {
-                        return process(data);
-                    });
-                },
-                updater: function(item) {
-                    $.get('/goto/?q=' + item, function(data) {
-                        document.location = "/codex/" + data["codex"];
-                    });
-                }
+                remote: "/search/?q=%QUERY"
+                // minLength: 3,
+                // items: 10,
+                // source: function(query, process) {
+                //     $.getJSON('/search/?q=' + query, function(data) {
+                //         var dlen = data.length;
+                //         var ret = [];
+                //         for (i = 0; i < dlen; i++) {
+                //             ret.push(data[i][1]);
+                //         };
+                //         return process(ret);
+                //     });
+                // },
+                // updater: function(item) {
+                //     $.get('/goto/?q=' + item, function(data) {
+                //         console.log(data);
+                //         document.location = "/codex/" + data["codex"];
+                //     });
+                // }
             });
-        </script>
+        </script>-->
     </div>
 </div>
 {% endblock %}

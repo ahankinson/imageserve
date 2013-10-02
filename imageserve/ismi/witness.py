@@ -14,11 +14,11 @@ class ISMIWitness(object):
 def fetch_witnesses(ismi_id):
     """ Fetches witnesses for a given ISMI ID """
     rel = []
-    witnesses = api.fetch('get_ent', include_content="true", id=ismi_id)
-    if not witnesses:
+    codex = api.fetch('get_ent', include_content="true", id=ismi_id)
+    if not codex:
         return None
-    witnesses = witnesses.get('ent', None)
-    target_relations = witnesses.get('tar_rels', None)
+    codex_data = codex.get('ent', None)
+    target_relations = codex_data.get('tar_rels', None)
     if target_relations:
         related_objects = [r for r in target_relations if r['name'] == 'is_part_of']
         for wit in related_objects:
