@@ -19,7 +19,7 @@ class Witness(models.Model):
 
     @property
     def known(self):
-        return not self.name.startswith("UNKNOWN_")
+        return not self.name.startswith("UNKNOWN_") and not self.name.startswith("null_")
 
     @property
     def manuscript_name(self):

@@ -8,26 +8,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ STATIC_URL }}css/bootstrap.css" type="text/css" />
     <link href="{{ STATIC_URL }}css/bootstrap-responsive.min.css" rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+    <link href="{{ STATIC_URL }}css/style.css" rel="stylesheet">
+    <script src="{{ STATIC_URL }}js/jquery.min.js" type="text/javascript"></script>
     <script src="{{ STATIC_URL }}js/bootstrap.min.js"></script>
     <script src="{{ STATIC_URL }}js/typeahead.js"></script>
 
     <script type="text/javascript">
-        $(document).ready( function () {
-            $("#login-button").on('click', function () {
-                $.get(
-                    "/login/?next=",
-                    function (data) {
-                        $("#loginModalBody").html(data);
-                        $("#loginModal").modal('show');
-                    }
-                );
-            });
-            $("#loginModal").on('shown', function () {
-                $("#id_username").focus();
+        $(document).ready(function () {
+            $('#login-button').on('click', function(ev) {
+                console.log("hello");
             });
         });
     </script>
+
     {% block header %}
 
     {% endblock %}
@@ -41,40 +34,31 @@
         </ul>
         <ul class="nav pull-right">
             {% if user.is_authenticated %}
-                <li><a>Currently logged in as: {{ user.username }}</a><li>
-            {% endif %}
-            {% block navbar %}
-            {% endblock %}
-            {% if user.is_authenticated %}
                 <li>
-                    <a href='/logout/?next={{path}}'>
-                        Log out
-                    </a>
+                    <div class="control-group">
+                        <select id="show-codices-control">
+                            <option value="all">Show All Codices</option>
+                            <option value="stabi" selected="selected">Show Only Stabi Codices</option>
+                        </select>
+                    </div>
+                </li>
+                <li><a>Currently logged in as: {{ user.username }}</a><li>
+                <li>
+                    <a href='/logout/'>Log out</a>
                 </li>
             {% else %}
-                <li><a id="login-button" href="#">Login</a></li>
+                <li>
+                    <!-- <a id="login-button" href="#">Login</a> -->
+                    <a href="/login/">Login</a>
+                </li>
             {% endif %}
         </ul>
     </div>
 </div>
-{% block loginmodal %}
-<div id="loginModal" class="modal hide fade" tabindex="-1" role="dialog"
-     aria-labelledby="loginLabel" aria-hidden="true">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3 id="loginLabel">Login</h3>
-  </div>
-  <div id="loginModalBody" class="modal-body">
-  </div>
-  <div class="modal-footer">
-    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Cancel</button>
-  </div>
-</div>
-{% endblock %}
-<div class="container">
-{% block modal %}
-{% endblock %}
+
+<div class="custom-container">
 {% block wrap %}
+
 {% endblock %}
 </div>
 

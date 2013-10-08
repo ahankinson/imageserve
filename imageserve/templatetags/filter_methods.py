@@ -23,12 +23,12 @@ def get_length(dictionary):
     return length
 
 @register.filter
-def rangefn(number): return range(1,number) + [number]
+def rangefn(number): return range(1, number) + [number]
 
 @register.filter
 def pager(l, page_num): 
-    start = 0 if (page_num-5) < 0 else (page_num-5)
-    return l[start:page_num+5]
+    start = 0 if (page_num - 5) < 0 else (page_num - 5)
+    return l[start:page_num + 5]
 
 @register.filter
 def format_time(timestamp):

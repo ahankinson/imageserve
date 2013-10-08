@@ -1939,7 +1939,7 @@ window.divaPlugins = [];
 
                     if (settings['enable' + pluginProperName]) {
                         // Call the init function and check return value
-                        var enablePlugin = plugin.init(settings);
+                        var enablePlugin = plugin.init(settings, self);
 
                         // If int returns false, consider the plugin disabled
                         if (!enablePlugin) {
@@ -2272,6 +2272,11 @@ window.divaPlugins = [];
         this.getCurrentPageFilename = function ()
         {
             return settings.pages[settings.currentPageIndex].f;
+        };
+
+        this.getCurrentPageNumber = function ()
+        {
+            return settings.currentPageIndex + 1;
         };
 
         // Returns the current zoom level

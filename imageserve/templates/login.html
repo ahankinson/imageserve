@@ -1,29 +1,50 @@
-{% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
-{% endif %}
+{% extends 'main.html' %}
 
-<form class="form-horizontal" method="post" action="/login">
-{% csrf_token %}
-<div class="control-group">
-    <label class="control-label" for="id_username">
-        {{ form.username.label_tag }}
-    </label>
-    <div class="controls">
-        {{ form.username }}
+
+{% block wrap %}
+
+<div class="row-fluid">
+    <div class="span12">
+        <form class="form-horizontal" method="post" action="/login">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">
+            {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        <div class="control-group">
+            {% if form.username.errors %}
+            <div class="alert alert-error">
+                {{ form.username.errors }}
+            </div>
+            {% endif %}
+            <label class="control-label" for="id_username">
+                {{ form.username.label }}
+            </label>
+            <div class="controls">
+                {{ form.username }}
+            </div>
+        </div>
+        <div class="control-group">
+            {% if form.password.errors %}
+            <div class="alert alert-error">
+                {{ form.password.errors }}
+            </div>
+            {% endif %}
+            <label class="control-label" for="id_password">
+                {{ form.password.label }}
+            </label>
+            <div class="controls">
+                {{ form.password }}
+            </div>
+        </div>
+        <div class="control-group">
+            <div class="controls">
+                <button type="submit" class="btn">Login</button>
+                <input type="hidden" name="next" value="{{ next }}" />
+            </div>
+        </div>
+        </form>
     </div>
 </div>
-<div class="control-group">
-    <label class="control-label" for="id_password">
-        {{ form.password.label_tag }}
-    </label>
-    <div class="controls">
-        {{ form.password }}
-    </div>
-</div>
-<div class="control-group">
-    <div class="controls">
-        <button type="submit" class="btn">Login</button>
-        <input type="hidden" name="next" value="{{ next }}" />
-    </div>
-</div>
-</form>
+{% endblock %}

@@ -6,11 +6,17 @@ PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 JSON_INTERFACE = "http://openmind-ismi-dev.mpiwg-berlin.mpg.de/om4-ismi/jsonInterface?"
 DIVASERVE_URL = "https://images.rasi.mcgill.ca/divaserve"
 IIPSERVER_URL = "https://images.rasi.mcgill.ca/fcgi-bin/iipsrv.fcgi"
-IMG_DIR = "/Users/ahankins/Documents/code/git/imageserve/images"
+IMG_DIR = "/data7/srv/images"
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 CACHE_ENABLED = True
+
+REST_FRAMEWORK = {
+    'PAGINATE_BY': 50,                 # Default to 10
+    'PAGINATE_BY_PARAM': 'page_size',  # Allow client to override, using `?page_size=xxx`.
+    'MAX_PAGINATE_BY': 100             # Maximum limit allowed when using `?page_size=xxx`.
+}
 
 NO_DATA_MSG = "Data not entered"
 
@@ -135,7 +141,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.i18n",
     "django.core.context_processors.media",
     'django.core.context_processors.static',
-    "django.core.context_processors.request"
+    "django.core.context_processors.request",
+    "imageserve.context_processors.diva.diva_settings"
 )
 
 MIDDLEWARE_CLASSES = (
@@ -177,6 +184,7 @@ INSTALLED_APPS = (
     'south',
     'guardian',
     'imageserve',
+    'rest_framework'
 )
 
 AUTHENTICATION_BACKENDS = (

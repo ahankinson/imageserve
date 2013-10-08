@@ -12,6 +12,7 @@
     <script type="text/javascript" src="{{ STATIC_URL }}js/diva.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/canvas.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/download.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/highlight.js"></script>
     <script type="text/javascript">
         $(document).ready(function () {
             $('#page-jump').on('keypress', function(ev)
@@ -42,7 +43,7 @@
                 }
             });
 
-            $('#go-to-witness-link').on('click', function(ev) {
+            $('.go-to-witness-link').on('click', function(ev) {
                 var dv = $('#diva-wrapper').data('diva');
                 var start_page = $(this).data('start');
                 dv.gotoPageByNumber(start_page);
@@ -50,35 +51,78 @@
                 ev.preventDefault();
             });
 
-            $('.set-start-image-btn').on('click', function(ev)
+            $("#witness-edit").on('click', '.set-start-image-btn', function(ev)
             {
                 var dv = $('#diva-wrapper').data('diva');
                 var witness = $(this).data('witness');
-                var page = dv.getCurrentPage();
-                modifyWitness(witness, 'start_page', page);
+                var page = dv.getCurrentPageNumber();
+
+                var startSetCallback = function(data, caller)
+                {
+                    var parent = caller.parent();
+                    var el = $("<span>" + data.start_page + "(<a href='#' class='remove-start-image' data-witness='" + data.ismi_id + "'>X</a>)</span>");
+                    caller.remove();
+                    parent.append(el);
+                }
+
+                modifyWitness(witness, 'start_page', page, startSetCallback, $(this));
             });
 
-            $('.set-end-image-btn').on('click', function(ev)
+            $("#witness-edit").on('click', '.set-end-image-btn', function(ev)
             {
                 var dv = $('#diva-wrapper').data('diva');
                 var witness = $(this).data('witness');
-                var page = dv.getCurrentPage();
-                modifyWitness(witness, 'end_page', page);
+                var page = dv.getCurrentPageNumber();
+
+                var endSetCallback = function(data, caller)
+                {
+                    var parent = caller.parent();
+                    var el = $("<span>" + data.end_page + "(<a href='#' class='remove-end-image' data-witness='" + data.ismi_id + "'>X</a>)</span>");
+                    caller.remove();
+                    parent.append(el);
+                }
+
+                modifyWitness(witness, 'end_page', page, endSetCallback, $(this));
             });
 
-            $('.remove-start-image').on('click', function(ev)
+            $("#witness-edit").on('click', '.remove-start-image', function(ev)
             {
                 var witness = $(this).data('witness');
-                modifyWitness(witness, 'start_page', null);
+                var startRemoveCallback = function(data, caller)
+                {
+                    var parentTd = caller.parent().parent();
+                    var parent = caller.parent();
+                    var el = $("<button class='btn set-start-image-btn' data-witness='" + data.ismi_id + "'>Set Start Image</button>");
+                    parent.remove();
+                    parentTd.append(el);
+                }
+
+                modifyWitness(witness, 'start_page', null, startRemoveCallback, $(this));
             });
 
-            $('.remove-end-image').on('click', function(ev)
+            $("#witness-edit").on('click', '.remove-end-image', function(ev)
             {
                 var witness = $(this).data('witness');
-                modifyWitness(witness, 'end_page', null);
+
+                var endRemoveCallback = function(data, caller)
+                {
+                    var parentTd = caller.parent().parent();
+                    var parent = caller.parent();
+                    var el = $("<button class='btn set-end-image-btn' data-witness='" + data.ismi_id + "'>Set End Image</button>");
+                    parent.remove();
+                    parentTd.append(el);
+                }
+
+                modifyWitness(witness, 'end_page', null, endRemoveCallback, $(this));
             });
 
-            function modifyWitness(witness_id, key, value) {
+            $("#test-highlight").on('click', function(ev)
+            {
+                var dv = $("#diva-wrapper").data('diva');
+                dv.highlightOnPage('foo', 'bar', 'baz');
+            });
+
+            function modifyWitness(witness_id, key, value, successCallback, caller) {
                 var csrf = $("[name=csrfmiddlewaretoken]").val();
                 var witnessURL = "/witness/" + witness_id;
                 var data = {};
@@ -90,7 +134,12 @@
                         'X-CSRFToken': csrf
                     },
                     data: JSON.stringify(data),
-                    contentType: "application/json"
+                    contentType: "application/json",
+                    success: function(data, status, xhr)
+                    {
+                        // we'll need to operate on the button, so pass it back...
+                        successCallback(data, caller);
+                    }
                 });
             }
 
@@ -133,9 +182,10 @@
 
 <div class="row-fluid">
     <div class="span4">
+        <div style="height: 800px; overflow:scroll;">
         {% if content.ismi_id %}
             <h3 id="ms-title">{{ content.ms_name }}</h3>
-            {% if content.witnesses %}
+            {% if content.has_known_witnesses %}
             <h4>Titles in this Codex</h4>
             <table class="table table-bordered table-condensed">
                 <thead>
@@ -150,7 +200,7 @@
                             {% for t in witness.texts %}
                                 <tr>
                                     <td>{{ t.name }}</td>
-                                    <td><a id="go-to-witness-link" href="#" data-start="{{ witness.start_page }}">{{ witness.folios }}</a></td>
+                                    <td><a class="go-to-witness-link" href="#" data-start="{{ witness.start_page }}">{{ witness.folios }}</a></td>
                                 </tr>
                             {% endfor %}
                         {% endif %}
@@ -165,7 +215,7 @@
             <p>
                 {% for witness in content.witnesses %}
                     {% if not witness.known %}
-                        <span><a href="">{{ witness.folios }} </a></span>
+                        <span><a href="#" class="go-to-witness-link" data-start="{{ witness.start_page }}">{{ witness.folios }} </a></span>
                     {% endif %}
                 {% endfor %}
             </p>
@@ -177,11 +227,18 @@
 
             {% csrf_token %}
             <h4>Edit Folio/Image Correspondence</h4>
+            <div id="page-jump-group" class="control-group">
+                <label for="page-jump" class="control-label">Go to page: </label>
+                <div class="controls" id="page-jump-controls">
+                    <input id="page-jump" type="text" class="form-control">
+                </div>
+            </div>
+
             <div>
                 <p><strong>Current Page Index:</strong> <span id="current-page-idx"></span></p>
                 <p><strong>Page Filename:</strong> <span id="current-page-fn"></span></p>
             </div>
-            <table class="table table-bordered table-condensed">
+            <table id="witness-edit" class="table table-bordered table-condensed">
                 <thead>
                     <tr>
                         <th>Title</th>
@@ -195,28 +252,22 @@
                             <td>{{ witness.name }}: {{ witness.folios }}</td>
                             <td>
                                 {% if not witness.start_page %}
-                                    <button class="btn set-start-image-btn" data-witness="{{ witness.ismi_id }}">Set Start Image</button></td>
+                                    <button class="btn set-start-image-btn" data-witness="{{ witness.ismi_id }}">Set Start Image</button>
                                 {% else %}
-                                    <span>{{ witness.start_page }} (<a href="#" class="remove-start-image" data-witness="{{ witness.ismi_id }}">X</a>)</span>
+                                    <span>{{ witness.start_page }}(<a href="#" class="remove-start-image" data-witness="{{ witness.ismi_id }}">X</a>)</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if not witness.end_page %}
-                                    <button class="btn set-end-image-btn" data-witness="{{ witness.ismi_id }}">Set End Image</button></td>
+                                    <button class="btn set-end-image-btn" data-witness="{{ witness.ismi_id }}">Set End Image</button>
                                 {% else %}
-                                    <span>{{ witness.end_page }} (<a href="#" class="remove-end-image" data-witness="{{ witness.ismi_id }}">X</a>)</span>
+                                    <span>{{ witness.end_page }}(<a href="#" class="remove-end-image" data-witness="{{ witness.ismi_id }}">X</a>)</span>
                                 {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <div id="page-jump-group" class="control-group">
-                <label for="page-jump" class="control-label">Go to page: </label>
-                <div class="controls" id="page-jump-controls">
-                    <input id="page-jump" type="text" class="form-control">
-                </div>
-            </div>
             {% endif %}
 
         {% else %}
@@ -229,6 +280,7 @@
                 </p>
             {% endif %}
         {% endif %}
+    </div>
     </div>
     <div class="span8">
         <div id="diva-wrapper"></div>

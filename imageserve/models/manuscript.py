@@ -31,6 +31,10 @@ class Manuscript(models.Model):
         unknown_witnesses = self.witnesses.filter(name__startswith="UNKNOWN_")
         return unknown_witnesses.exists()
 
+    @property
+    def has_known_witnesses(self):
+        known_witnesses = self.witnesses.exclude(name__startswith="UNKNOWN_")
+        return known_witnesses.exists()
 
     # @property
     # def witnesses(self):
