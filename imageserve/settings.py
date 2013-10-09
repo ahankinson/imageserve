@@ -10,7 +10,6 @@ IMG_DIR = "/data7/srv/images"
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-CACHE_ENABLED = True
 
 REST_FRAMEWORK = {
     'PAGINATE_BY': 50,                 # Default to 10
@@ -20,38 +19,11 @@ REST_FRAMEWORK = {
 
 NO_DATA_MSG = "Data not entered"
 
-# set to true to update the defs and manuscripts.
-# Switched off by default for performance reasons
-UPDATE_MANUSCRIPTS = True
-UPDATE_DEFS = True
-
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
 
 MANAGERS = ADMINS
-
-# CACHES = {
-#     'default': {
-#         #'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
-#         # 'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
-#         # 'LOCATION': [
-#         #     'localhost:11211',
-#         #     'localhost:11212',
-#         #     'localhost:11213',
-#         #     'localhost:11214',
-#         #     'localhost:11215',
-#         # ],
-#         # 'BINARY': True,
-#         # 'OPTIONS': {
-#         #     'tcp_nodelay': True,
-#         #     'ketama': True
-#         # }
-#         # 'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-#         # 'LOCATION': 'is_cache_table',
-#         # 'TIMEOUT': 0
-#     }
-# }
 
 DATABASES = {
     'default': {
