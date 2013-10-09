@@ -41,7 +41,7 @@ class ManuscriptDetailHTMLRenderer(CustomHTMLRenderer):
 
 class ManuscriptList(generics.ListAPIView):
     model = Manuscript
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
     serializer_class = ManuscriptSerializer
     pagination_serializer_class = PaginatedManuscriptSerializer
     # paginate_by = 25
@@ -61,6 +61,6 @@ class ManuscriptList(generics.ListAPIView):
 
 class ManuscriptDetail(generics.RetrieveUpdateDestroyAPIView):
     model = Manuscript
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
     serializer_class = ManuscriptSerializer
     renderer_classes = (JSONRenderer, JSONPRenderer, ManuscriptDetailHTMLRenderer)
