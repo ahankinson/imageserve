@@ -47,6 +47,7 @@ class GenerateJson(object):
         images = []
 
         for i, f in enumerate(files):
+            print("Processing {0}".format(f))
             ignore, ext = os.path.splitext(f)
             if f.startswith("."):
                 continue    # ignore hidden files
@@ -206,6 +207,7 @@ if __name__ == "__main__":
             'output_directory': args[0]
         }
         gen = GenerateJson(**opts)
+        gen.generate()
 
     sys.exit(0)
 
