@@ -29,7 +29,7 @@
                             <ul>
                             {% for text in witness.texts %}
                                 <li>
-                                    <a href="/codex/{{ m.ismi_id }}/witness/{{ w.ismi_id }}">{{ text.name }}</a>
+                                    <a href="/codex/{{ manuscript.ismi_id }}/witness/{{ witness.ismi_id }}">{{ text.name }}</a>
                                     {% if text.people %}
                                     <ul>
                                         {% for person in text.people %}
@@ -50,7 +50,7 @@
                                 {% for witness in manuscript.witnesses %}
                                     {% if not witness.known %}
                                     <li>
-                                        <a href="/codex/{{ m.ismi_id }}/witness/{{ w.ismi_id }}">{{ witness.folios }}</a>
+                                        <a href="/codex/{{ manuscript.ismi_id }}/witness/{{ witness.ismi_id }}">{{ witness.folios }}</a>
                                     </li>
                                     {% endif %}
                                 {% endfor %}
