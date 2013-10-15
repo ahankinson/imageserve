@@ -33,7 +33,8 @@ window.divaPlugins = [];
             adaptivePadding: 0.05,      // The ratio of padding to the page dimension
             blockMobileMove: true,      // Prevent moving or scrolling the page on mobile devices
             contained: false,           // Determines the location of the fullscreen icon
-            divaserveURL: '',           // URL to the divaserve.php script - *MANDATORY*
+            objectData: '',             // URL to the JSON file that provides the object dimension data - *MANDATORY*
+            // divaserveURL: '',           // URL to the divaserve.php script - *MANDATORY*
             enableAutoHeight: false,    // Automatically adjust height based on the window size
             enableAutoTitle: true,      // Shows the title within a div of id diva-title
             enableAutoWidth: true,      // Automatically adjust width based on the window size
@@ -769,7 +770,7 @@ window.divaPlugins = [];
                     {
                         var filename = settings.pages[pageToConsider].f;
                         executeCallback(settings.onSetCurrentPage, pageToConsider, filename);
-                        Events.publish("ToolbarUpdateCurrentPage", null);
+                        Events.publish("UpdateCurrentPage", null);
 
                         // settings.toolbar.updateCurrentPage();
                     }
@@ -811,7 +812,7 @@ window.divaPlugins = [];
                 {
                     if (!setCurrentRow(direction))
                     {
-                        Events.publish("ToolbarUpdateCurrentPage", null);
+                        Events.publish("UpdateCurrentPage", null);
                         // settings.toolbar.updateCurrentPage();
                     }
                 }
@@ -837,7 +838,7 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page
             settings.currentPageIndex = pageIndex;
-            Events.publish("ToolbarUpdateCurrentPage", null);
+            Events.publish("UpdateCurrentPage", null);
             //settings.toolbar.updateCurrentPage();
             var filename = settings.pages[pageIndex].f;
             executeCallback(settings.onSetCurrentPage, pageIndex, filename);
@@ -855,7 +856,7 @@ window.divaPlugins = [];
 
             // Pretend that this is the current page (it probably isn't)
             settings.currentPageIndex = pageIndex;
-            Events.publish("ToolbarUpdateCurrentPage", null);
+            Events.publish("UpdateCurrentPage", null);
             // settings.toolbar.updateCurrentPage();
         };
 
@@ -1109,7 +1110,7 @@ window.divaPlugins = [];
             }
 
             // Change the look of the toolbar
-            Events.publish("ToolbarSwitchMode", null);
+            Events.publish("SwitchMode", null);
 
             // Toggle the classes
             $(settings.selector + 'fullscreen').toggleClass('diva-in-fullscreen');
@@ -1146,7 +1147,7 @@ window.divaPlugins = [];
         var handleViewChange = function ()
         {
             // Switch the slider
-            Events.publish("ToolbarSwitchView", null);
+            Events.publish("SwitchView", null);
 
             loadViewer();
             executeCallback(settings.onViewToggle, settings.inGrid);
@@ -1250,7 +1251,7 @@ window.divaPlugins = [];
 
             // Update the slider
             // settings.toolbar.updateZoomSlider();
-            Events.publish("ToolbarUpdateZoomSlider", null);
+            Events.publish("UpdateZoomSlider", null);
 
             loadDocument();
 
@@ -1273,7 +1274,7 @@ window.divaPlugins = [];
 
             // Update the slider
             // settings.toolbar.updateGridSlider();
-            Events.publish("ToolbarUpdateGridSlider", null);
+            Events.publish("UpdateGridSlider", null);
 
             loadGrid();
         };
@@ -1882,7 +1883,7 @@ window.divaPlugins = [];
                 $(settings.selector + 'grid-icon').toggleClass('diva-in-grid');
             };
 
-            var toolbar = 
+            var toolbar =
             {
                 updateCurrentPage: function ()
                 {
@@ -1937,12 +1938,14 @@ window.divaPlugins = [];
                 {
                     var pluginProperName = plugin.pluginName[0].toUpperCase() + plugin.pluginName.substring(1);
 
-                    if (settings['enable' + pluginProperName]) {
+                    if (settings['enable' + pluginProperName])
+                    {
                         // Call the init function and check return value
                         var enablePlugin = plugin.init(settings, self);
 
                         // If int returns false, consider the plugin disabled
-                        if (!enablePlugin) {
+                        if (!enablePlugin)
+                        {
                             return;
                         }
 
@@ -1996,20 +1999,20 @@ window.divaPlugins = [];
             }, settings.throbberTimeout);
 
             $.ajax({
-                url: settings.divaserveURL,
-                data: {
-                    d: settings.imageDir
-                },
+                url: settings.objectData,
+                // data: {
+                //     d: settings.imageDir
+                // },
                 cache: true,
                 dataType: 'json',
-                error: function (data)
+                error: function (jqxhr, status, error)
                 {
                     hideThrobber();
 
                     // Show a basic error message within the document viewer pane
-                    $(settings.outerSelector).text("Invalid URL. Error code: " + data.status);
+                    $(settings.outerSelector).text("Invalid URL. Error code: " + status + " " + error);
                 },
-                success: function (data)
+                success: function (data, status, jqxhr)
                 {
                     hideThrobber();
 
@@ -2066,11 +2069,11 @@ window.divaPlugins = [];
                     if (settings.enableToolbar)
                     {
                         settings.toolbar = createToolbar();
-                        Events.subscribe("ToolbarUpdateCurrentPage", settings.toolbar.updateCurrentPage);
-                        Events.subscribe("ToolbarSwitchMode", settings.toolbar.switchMode);
-                        Events.subscribe("ToolbarSwitchView", settings.toolbar.switchView);
-                        Events.subscribe("ToolbarUpdateZoomSlider", settings.toolbar.updateZoomSlider);
-                        Events.subscribe("ToolbarUpdateGridSlider", settings.toolbar.updateGridSlider);
+                        Events.subscribe("UpdateCurrentPage", settings.toolbar.updateCurrentPage);
+                        Events.subscribe("SwitchMode", settings.toolbar.switchMode);
+                        Events.subscribe("SwitchView", settings.toolbar.switchView);
+                        Events.subscribe("UpdateZoomSlider", settings.toolbar.updateZoomSlider);
+                        Events.subscribe("UpdateGridSlider", settings.toolbar.updateGridSlider);
                     }
 
                     $(settings.selector + 'current label').text(settings.numPages);
