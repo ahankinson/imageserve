@@ -31,6 +31,7 @@ def alphanum_key(s):
 def by_folio(obj):
     return alphanum_key(obj.folios)
 
+
 class ManuscriptListHTMLRenderer(CustomHTMLRenderer):
     template_name = "manuscript/manuscript_list.html"
 
@@ -41,7 +42,7 @@ class ManuscriptDetailHTMLRenderer(CustomHTMLRenderer):
 
 class ManuscriptList(generics.ListAPIView):
     model = Manuscript
-    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
+    permission_classes = (permissions.DjangoObjectPermissions,)
     serializer_class = ManuscriptSerializer
     pagination_serializer_class = PaginatedManuscriptSerializer
     # paginate_by = 25
@@ -61,6 +62,6 @@ class ManuscriptList(generics.ListAPIView):
 
 class ManuscriptDetail(generics.RetrieveUpdateDestroyAPIView):
     model = Manuscript
-    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
+    permission_classes = (permissions.DjangoObjectPermissions,)
     serializer_class = ManuscriptSerializer
     renderer_classes = (JSONRenderer, JSONPRenderer, ManuscriptDetailHTMLRenderer)
