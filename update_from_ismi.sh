@@ -1,3 +1,5 @@
+#!/bin/bash
+
 WORKING_DIR=/data7/srv/webapps/imageserve2
 ACTIVATE_PATH=srv_env/bin/activate
 MY_PATH="`dirname \"$0\"`"              # relative
