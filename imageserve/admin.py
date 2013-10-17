@@ -11,6 +11,8 @@ from imageserve.models import ManuscriptGroup
 from imageserve.models import Witness
 from imageserve.models import Text
 from imageserve.models import Person
+from imageserve.models import AttributeDisplay
+from imageserve.models import RelationshipDisplay
 from imageserve.ismi.witness import fetch_mss_witnesses
 
 # from imageserve.forms import PageRangeListFormField
@@ -59,6 +61,13 @@ class TextAdmin(GuardedModelAdmin):
 
 
 class PersonAdmin(GuardedModelAdmin):
+    pass
+
+class AttributeDisplayAdmin(GuardedModelAdmin):
+    pass
+
+
+class RelationshipDisplayAdmin(GuardedModelAdmin):
     pass
 
 # class AttSettingListFilter(admin.SimpleListFilter):
@@ -110,6 +119,8 @@ admin.site.register(ManuscriptGroup, ManuscriptGroupAdmin)
 admin.site.register(Witness, WitnessAdmin)
 admin.site.register(Text, TextAdmin)
 admin.site.register(Person, PersonAdmin)
+admin.site.register(AttributeDisplay, AttributeDisplayAdmin)
+admin.site.register(RelationshipDisplay, RelationshipDisplayAdmin)
 # admin.site.register(AttDisplaySetting, AttSettingAdmin)
 # admin.site.register(RelDisplaySetting, RelSettingAdmin)
 # admin.site.register(CacheTable, CacheTableAdmin)
