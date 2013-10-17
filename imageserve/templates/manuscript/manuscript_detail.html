@@ -15,6 +15,23 @@
     <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/highlight.js"></script>
     <script type="text/javascript">
         $(document).ready(function () {
+            function getURLParams()
+            {
+                var urlParams = {},
+                    match,
+                    pl     = /\+/g,  // Regex for replacing addition symbol with a space
+                    search = /([^&=]+)=?([^&]*)/g,
+                    decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+                    query  = window.location.search.substring(1);
+                while (match = search.exec(query))
+                {
+                    urlParams[decode(match[1])] = decode(match[2]);
+                }
+
+                return urlParams;
+            }
+
+
             $('#page-jump').on('keypress', function(ev)
             {
                 if (ev.which == '13')
@@ -153,8 +170,29 @@
 
             function handleDocumentLoaded(idx, fn)
             {
-                console.log("Page loaded idx: " + idx);
-                console.log("Page loaded fn: " + fn);
+                var witnesses = {};
+
+                // we could do this with an ajax request, but we have
+                // the variables already here, we just need to get them
+                // from Django and not JS. 
+                {% for witness in content.witnesses %}
+                    {% if witness.start_page %}
+                        witnesses[{{ witness.ismi_id }}] = {{ witness.start_page }};
+                    {% endif %}
+                {% endfor %}
+
+                var urlParams = getURLParams();
+                if (urlParams.hasOwnProperty('witness'))
+                {
+                    urlWitness = parseInt(urlParams['witness'], 10);
+                    
+                    // this won't be populated if the witness doesn't have a
+                    // start page set.
+                    if (witnesses.hasOwnProperty(urlWitness))
+                    {
+                        this.gotoPageByNumber(witnesses[urlWitness]);
+                    }
+                }
             }
 
             $("#diva-wrapper").diva(
@@ -172,7 +210,6 @@
                 onSetCurrentPage: handlePageSwitch,
                 onDocumentLoaded: handleDocumentLoaded
             });
-
 
         });
     </script>
