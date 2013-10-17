@@ -309,7 +309,6 @@ Adds a little "tools" icon next to each image
         // Load the image within the large and small canvases
         var loadCanvas = function (imageURL, callback)
         {
-            console.log("Loading canvas: " + imageURL);
             image = new Image();
             image.src = imageURL;
 
@@ -372,20 +371,14 @@ Adds a little "tools" icon next to each image
         // Returns the URL for the image at the specified zoom level
         var getImageURL = function (zoomLevel)
         {
-            console.log("Getting image URL");
             var width = settings.zoomWidthRatio * Math.pow(2, zoomLevel);
 
             if (settings.proxyURL)
             {
-                console.log("Got the proxy URL section");
-
                 return settings.proxyURL + "?f=" + settings.filename + "&w=" + width;
             }
 
-
             var imdir = settings.imageRoot + "/" + settings.imageDir + "/";
-            console.log("imdir: " + imdir);
-            console.log("Other: " + settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG');
             return settings.iipServerURL + "?FIF=" + imdir + settings.filename + '&WID=' + width + '&CVT=JPEG';
         };
 
@@ -835,8 +828,6 @@ Adds a little "tools" icon next to each image
             handleClick: function(event, divaSettings)
             {
                 // loadCanvas() calls all the other necessary functions to load
-                console.log("Clicked!");
-
                 var page = $(this).parent().parent();
                 var filename = $(page).attr('data-filename');
                 var width = $(page).width() - 1;
@@ -887,7 +878,6 @@ Adds a little "tools" icon next to each image
                 settings.inCanvas = true;
 
                 var imageURL = getImageURL(zoomLevel);
-                console.log("Image URL: " + imageURL);
 
                 // Change the title of the page
                 $('#diva-canvas-info').text($(page).attr('title'));
