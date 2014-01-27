@@ -8,11 +8,7 @@
 
 {% block header %}
     <link rel="stylesheet" href="{{ STATIC_URL }}css/diva.min.css" type="text/css" />
-    <script type="text/javascript" src="{{ STATIC_URL }}js/utils.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/diva.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/canvas.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/download.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/plugins/highlight.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/diva.min.js"></script>
     <script type="text/javascript">
         $(document).ready(function () {
             function getURLParams()
@@ -203,9 +199,8 @@
                 fixedHeightGrid: false,
                 contained: true,
                 iipServerURL: "{{ IIPSERVER_URL }}",
-                objectData: "/data/{{ content.ms_name }}.json",
-                imageRoot: "{{ IMG_DIR }}",
-                imageDir: "{{ content.ms_name }}",
+                objectData: "{{ OBJECT_DATA }}/{{ content.ms_name }}.json",
+                imageDir: "{{ IMG_DIR }}/{{ content.ms_name }}",
 
                 onSetCurrentPage: handlePageSwitch,
                 onDocumentLoaded: handleDocumentLoaded
