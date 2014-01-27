@@ -4,7 +4,7 @@ import os
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 JSON_INTERFACE = "http://openmind-ismi-dev.mpiwg-berlin.mpg.de/om4-ismi/jsonInterface?"
-DIVASERVE_URL = "https://images.rasi.mcgill.ca/divaserve"
+OBJECT_DATA = "/data-proxy"
 IIPSERVER_URL = "https://images.rasi.mcgill.ca/fcgi-bin/iipsrv.fcgi"
 IMG_DIR = "/data7/srv/images"
 
