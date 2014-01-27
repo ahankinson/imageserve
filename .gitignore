@@ -1,5 +1,4 @@
 *.pyc
 .DS_Store
-imageserve/migrations
 database.sqlite3
 images/
