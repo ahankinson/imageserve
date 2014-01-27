@@ -12,6 +12,7 @@ from imageserve.views.search import search
 from imageserve.views.search import goto
 from imageserve.views.auth import LoginFormView
 from imageserve.views.auth import logout_view
+from imageserve.views.data import data_proxy
 # from imageserve.views.search import search
 # from imageserve.views.diva import diva
 
@@ -29,6 +30,7 @@ urlpatterns = patterns('',
     # url(r'^divaserve/?', diva),
     url(r'^login/?', LoginFormView.as_view()),
     url(r'^logout/?', logout_view),
+    url(r'^data-proxy/(?P<msname>.*)$', data_proxy),
     # url(r'^wit_for_page$', views.wit_for_page),
     # url(r'^folio_for_page$', views.folio_for_page),
     # url(r'^page_for_folio$', views.page_for_folio),
